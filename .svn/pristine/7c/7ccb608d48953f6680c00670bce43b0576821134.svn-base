@@ -1,0 +1,50 @@
+import axios from '../common/js/http'
+import CONFIG from './config'
+import qs from 'qs'
+import {requestDispose} from '../common/js/util'
+
+
+export function getCollageDetail(opts) {
+    return axios.post(CONFIG.API.GTE_COLLAGE_DETAIL, qs.stringify({
+        collageId: opts.collageId,
+    }),{headers:{showLoading: false}}).then(res => requestDispose(res, true, true))
+}
+
+//创建拼团
+export function createCollage(opts) {
+    return axios.post(CONFIG.API.CREATE_COLLAGE, qs.stringify({
+        gameId: opts.gameId,
+        returnUrl: opts.returnUrl
+    }),{headers:{showLoading: false}}).then(res => requestDispose(res))
+}
+
+//加入拼团
+export function joinCollage(opts) {
+    return axios.post(CONFIG.API.JOIN_COLLAGE, qs.stringify({
+        collageId: opts.collageId,
+        returnUrl: opts.returnUrl
+    }),{headers:{showLoading: true}}).then(res => requestDispose(res, true, true))
+}
+
+//获取分享图片
+export function getSharePic(opts) {
+    return axios.post(CONFIG.API.GET_SHARE_PIC, qs.stringify({
+        collageId: opts.collageId,
+    }),{headers:{showLoading: true}}).then(res => requestDispose(res, true, true))
+}
+
+
+//更新提示状态
+export function updateTips(opts) {
+    return axios.post(CONFIG.API.UPDATE_TIPS, qs.stringify({
+        collageId: opts.collageId,
+    }),{headers:{showLoading: false}}).then(res => requestDispose(res, true, true))
+}
+
+//更新提示状态
+export function showGifts(opts) {
+    return axios.post(CONFIG.API.SHOW_GIFTS, qs.stringify({
+        collageId: opts.collageId,
+    }),{headers:{showLoading: false}}).then(res => requestDispose(res, true, true))
+}
+

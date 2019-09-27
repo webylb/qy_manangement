@@ -1,0 +1,153 @@
+<template>
+    <div class="hexiao" ref="heixaoContent">
+        <section class="hexiao-wrap">
+          <div class="qr-wrap" @click="handleSao">
+            <img src="../assets/images/sao.png" alt="">
+          </div>
+          <div class="input-group-wrap">
+            <div class="input-item">
+              <van-field
+                v-model="couponCode"
+                type="text"
+                placeholder="手动输入券码"
+                @focus="focusInput"
+                clearable
+              />
+
+              <van-button class="right-button sub" @click="subInfo">提交</van-button>
+
+            </div>
+          </div>
+          <div class="rec" @click="toHexiaoRecord">
+            <p class="rec-text">核销记录</p><img src="../assets/images/right.png" alt="">
+          </div>
+        </section>
+        <van-dialog
+          v-model="showErr"
+          title="核销失败"
+          confirm-button-color="#1890FF"
+        >
+          <img class="dialog-img" src="../assets/images/err.png">
+          <p class="dialog-text">请查看券码是否正确</p>
+        </van-dialog>
+    </div>
+</template>
+
+<script>
+    import { Field, Button, Dialog  } from 'vant'
+    import { trackEvent } from '../common/js/util'
+
+    export default {
+        name: 'home',
+        data() {
+          return {
+            loading: false,
+            finished: false,
+            couponCode: null,
+            showErr: false
+          }
+        },
+        created() {
+
+        },
+        methods: {
+          focusInput(e){
+            // var doc = document.documentElement;
+            // document.body.style.height = doc.scrollHeight+'px';
+          },
+          handleSao(){
+
+          },
+          subInfo(){
+
+          },
+          toHexiaoRecord(){
+            this.$router.push('/heixiaoRecord')
+          }
+        },
+        components: {
+          [Field.name]: Field,
+          [Button.name]: Button
+        }
+    }
+</script>
+
+<style lang="less" scoped>
+    /*@import "../common/style/mixins";*/
+    .hexiao {
+      .hexiao-wrap {
+        position: relative;
+        padding-top: 43px;
+        .qr-wrap {
+          width: 224px;
+          height: 225px;
+          margin: 0 auto 37px;
+          img {
+            width: 100%;
+            height: 100%;
+          }
+        }
+        .input-group-wrap {
+          margin-bottom: 60px;
+          height: 44px;
+          .input-item {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            height: 44px;
+            margin: 0 12px;
+            .van-field {
+              padding: 10px 9px;
+              width:231px;
+              height:44px;
+              background:rgba(247,247,247,1);
+              border:1px solid rgba(199,199,199,1);
+              border-radius:22px;
+              font-size:15px;
+              color:rgba(51,51,51,1);
+            }
+            .right-button {
+              width:108px;
+              height:40px;
+              margin-left: 12px;
+              margin-top: 2px;
+              line-height: 40px;
+              background:rgba(24,144,255,1);
+              border-radius:20px;
+              font-size:16px;
+              color:rgba(255,255,255,1);
+            }
+          }
+        }
+        .rec {
+          text-align: center;
+          font-size:14px;
+          text-decoration:underline;
+          color:rgba(24,144,255,1);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          img {
+            width: 12px;
+            height: 12px;
+            margin-left: 4px;
+          }
+        }
+      }
+      .dialog-img {
+        width: 48px;
+        height: 48px;
+        margin-top: 30px;
+        margin-bottom: 17px;
+      }
+      .dialog-text {
+        font-size:16px;
+        color:rgba(102,102,102,1);
+        line-height:23px;
+        margin: 0 0 30px;
+      }
+    }
+    .hexiao /deep/ .van-dialog__content{
+      text-align: center;
+    }
+</style>

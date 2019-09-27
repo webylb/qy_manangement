@@ -1,0 +1,38 @@
+import axios from '../common/js/http'
+import CONFIG from './config'
+import qs from 'qs'
+import {requestDispose} from '../common/js/util'
+
+/**
+ * 登出
+ * */
+export function subLoginOut() {
+    return axios.post(CONFIG.API.LOGINOUT, {headers: {showLoading: true}}).then(res => {
+        return requestDispose(res)
+    })
+}
+
+/**
+ * 获取用户信息
+ * */
+export function getUserData() {
+  return axios.post(CONFIG.API.GET_USER_INFO, qs.stringify(), {headers: {showLoading: false}}).then(res => {
+      return requestDispose(res)
+  })
+}
+
+
+/**
+ * 修改用户密码
+ * */
+export function changePassword(opts) {
+  return axios.post(CONFIG.API.CHANGE_PASSWORD, qs.stringify({
+    oldPassword: opts.oldPassword,
+    newPassword: opts.newPassword
+  }),{headers: {showLoading: true}}).then(res => {
+      return requestDispose(res)
+  })
+}
+
+
+

@@ -1,0 +1,1006 @@
+<template>
+    <div>
+        <div class="active-info" v-show="!loading">
+            <div class="user-status">
+                <div class="status-icon">
+                    <img v-if="status == 'WAIT' && role == 'partner'" src="../assets/images/await-icon.png" alt="">
+                    <img v-if="status == 'WAIT' && role == 'leader'" src="../assets/images/success-icon.png" alt="">
+                    <img v-if="status == 'SUCCESS'" src="../assets/images/success-icon.png" alt="">
+                    <img v-if="status == 'FAIL'" src="../assets/images/err-icon.png" alt="">
+                </div>
+                <div class="status-text">
+                    <img src="../assets/images/text-left.png" alt="">
+                    <p v-if="status == 'WAIT'" class="success">
+                        <span v-if="role == 'leader'">恭喜你成为团长</span>
+                        <span v-else>你正在与好友一起拼团中…</span>
+                    </p>
+                    <p v-else-if="status == 'SUCCESS'" class="success">恭喜你拼团成功</p>
+                    <p v-else class="err">很遗憾，拼团失败啦</p>
+                    <img src="../assets/images/text-right.png" alt="">
+                </div>
+                <div class="status-subtext">
+                    <span v-if="status == 'WAIT'">
+                        快去邀请好友加入吧！
+                    </span>
+                    <span v-else-if="status == 'SUCCESS'">
+                        <span v-if="role == 'leader'">查看奖品领取爱奇艺月卡一张</span>
+                        <span v-else>快去查看奖品吧~</span>
+                    </span>
+                    <span v-else class="err">未按时达到成团人数，系统自动将款项原路返还</span>
+                </div>
+                <div class="status-line">
+                    <img src="../assets/images/line.png" alt="">
+                </div>
+                <div class="gift-info" v-if="goodsInfo">
+                    <div class="gift-info-img">
+                        <img :src="goodsInfo.img" alt="" srcset="">
+                    </div>
+                    <div v-if="status !== 'SUCCESS'" class="gift-info-cont">
+                        <p class="name">{{ goodsInfo.title }}</p>
+                        <p class="text">{{ goodsInfo.subTitle }}</p>
+                        <div class="price">
+                            <p class="money"><span class="money-label">¥</span><span>{{ priceFixed(goodsInfo.payMoney) }}</span></p>
+                            <p class="label"></p>
+                        </div>
+                        <p class="maket-price">
+                            <span>原价:<s>¥{{ priceFixed(goodsInfo.realMoney) }}</s></span>
+                        </p>
+                    </div>
+                    <div v-if="status !== 'SUCCESS'" class="gift-info-btn">
+                        <button type="button" @click="toDetail()">详情</button>
+                    </div>
+                    <div v-if="status == 'SUCCESS'" class="gift-info-success">
+                        <p>沃粉会员已激活</p>
+                        <button type="button" @click="toUse()">前去使用</button>
+                    </div>
+                </div>
+                <div class="left-dot dot">
+                    <img src="../assets/images/link-img.png" />
+                </div>
+                <div class="right-dot dot">
+                    <img src="../assets/images/link-img.png" />
+                </div>
+            </div>
+            <div class="user-status user-info">
+                <div class="info-title">
+                    <img src="../assets/images/line-left.png" alt="">
+                    <p v-if="status == 'SUCCESS'" class="success">拼团成功</p>
+                    <p v-else-if="status == 'WAIT'">距结束</p>
+                    <p v-else>拼团失败</p>
+                    <img src="../assets/images/line-right.png" alt="">
+                </div>
+                <div v-if="status == 'WAIT' && time" class="info-time">
+                    <van-count-down :time="time" format="HH:mm:ss" @finish="dateFinish">
+                        <template v-slot="timeData">
+                            <span class="item">
+                                <span v-if="timeData.hours < 10">0{{ timeData.hours }}</span>
+                                <span v-else>{{ timeData.hours }}</span>
+                            </span>
+                            <span class="icon">：</span>
+                            <span class="item">
+                                <span v-if="timeData.minutes < 10">0{{ timeData.minutes }}</span>
+                                <span v-else>{{ timeData.minutes }}</span>
+                            </span>
+                            <span class="icon">：</span>
+                            <span class="item">
+                                <span v-if="timeData.seconds < 10">0{{ timeData.seconds }}</span>
+                                <span v-else>{{ timeData.seconds }}</span>
+                            </span>
+                        </template>
+                    </van-count-down>
+                </div>
+                <div v-if="status == 'SUCCESS' && successTime" class="info-time info-time-success">
+                    <van-count-down :time="successTime" :auto-start="false">
+                        <template v-slot="timeData">
+                            <span class="item">用时</span>
+                            <span class="item">
+                                <span v-if="timeData.hours < 10">0{{ timeData.hours }}</span>
+                                <span v-else>{{ timeData.hours }}</span>
+                            </span>
+                            <span class="icon">：</span>
+                            <span class="item">
+                                <span v-if="timeData.minutes < 10">0{{ timeData.minutes }}</span>
+                                <span v-else>{{ timeData.minutes }}</span>
+                            </span>
+                            <span class="icon">：</span>
+                            <span class="item">
+                                <span v-if="timeData.seconds < 10">0{{ timeData.seconds }}</span>
+                                <span v-else>{{ timeData.seconds }}</span>
+                            </span>
+                        </template>
+                    </van-count-down>
+                </div>
+                <div class="info-text" v-if="surplusNumber > 0">
+                    <div class="group-lack">
+                        <span class="total">3</span>人成团，还差<span class="lack">{{ surplusNumber }}</span>人，召唤伙伴来拼团~
+                    </div>
+                </div>
+                <div class="info-users-row">
+                    <div class="list" :class="[userList.length > 4 ? 'db-list' : '']">
+                        <div class="item" v-for="(item,index) in userList" :key="index">
+                            <img v-if="item.img" :src="item.img" alt="">
+                            <img v-else src="../assets/images/default-user-img.png" alt="">
+                            <div v-if="item.role == 'leader'" class="label"></div>
+                        </div>
+                        <div class="item" v-if="surplusNumber > 0">
+                            <img src="../assets/images/user-add.png" alt="">
+                        </div>
+                    </div>
+                </div>
+                <div class="info-succes" v-if="status == 'SUCCESS' && role == 'partner'">
+                    <p>免费开团</p>
+                    <p>获得爱奇艺会员月卡</p>
+                    <div>
+                        <img src="../assets/images/text-bottom.png" alt="">
+                    </div>
+                </div>
+                <div class="info-succes info-err-hint" v-if="status == 'FAIL' && role == 'leader'">
+                    <p>开团成功</p>
+                    <p>奖励爱奇艺月卡</p>
+                    <div>
+                        <img src="../assets/images/text-bottom.png" alt="">
+                    </div>
+                </div>
+                <div class="info-btn-group" v-if="status == 'WAIT' && role == 'leader' && joinStatus">
+                    <div class="info-default-btn btn">
+                        <button type="button" @click="toInvite()">邀请好友来参团</button>
+                    </div>
+                </div>
+                <div class="info-btn-group" v-if="status == 'WAIT' && role == 'partner' && joinStatus">
+                    <div class="info-default-btn btn">
+                        <button type="button" @click="toInvite()">邀请好友来参团</button>
+                    </div>
+                </div>
+                <div class="info-btn-group" v-if="status == 'SUCCESS' && role == 'leader' && joinStatus">
+                    <div class="info-succee-btn btn">
+                        <button type="button" @click="showLeaderGift()">查看奖品</button>
+                    </div>
+                    <div class="info-default-btn btn">
+                        <button type="button" @click="joinCollage('leaderJoin')">我要参团</button>
+                    </div>
+                </div>
+                <div class="info-btn-group" v-if="status == 'SUCCESS' && role == 'partner' && joinStatus">
+                    <div class="info-default-btn btn">
+                        <button type="button" @click="createCollage('partnerOpen')">我要开团</button>
+                    </div>
+                </div>
+                <div class="info-btn-group" v-if="status == 'FAIL' && joinStatus">
+                    <div class="info-default-btn btn">
+                        <button type="button" @click="createCollage('failOpen')">我要开团</button>
+                    </div>
+                </div>
+                <div class="info-btn-group" v-if="!joinStatus && goodsInfo">
+                    <div class="info-default-btn btn">
+                        <button type="button" @click="joinPayCollage()">{{ goodsInfo.payMoney }}元/立即参团</button>
+                    </div>
+                </div>
+                <div class="info-users-col">
+                    <div class="list">
+                        <div class="item" v-for="(item,index) in userList" :key="index">
+                            <div class="item-left">
+                                <img v-if="item.img" :src="item.img" alt="">
+                                <img v-else src="../assets/images/default-user-img.png" alt="">
+                                <div>
+                                    <p class="user-name">{{ item.nickname }}</p>
+                                    <p class="add-time">{{ dateFormat(item.crateTime) }}</p>
+                                </div>
+                            </div>
+                            <div v-if="item.role == 'leader'" class="label label-default"><span>团长</span></div>
+                            <div v-else class="label"><span>成员</span></div>
+                        </div>
+                        <div class="item item-lack" v-if="surplusNumber > 0">
+                            <div class="item-left">
+                                <img src="../assets/images/user-add.png" alt="">
+                                <div>
+                                    <div class="lack">还差<span>{{ surplusNumber }}</span>人哦，赶快召唤小伙伴来拼团~</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="left-dot dot">
+                    <img src="../assets/images/link-img.png" />
+                </div>
+                <div class="right-dot dot">
+                    <img src="../assets/images/link-img.png" />
+                </div>
+            </div>
+            <div class="user-status user-explain">
+                <p>
+                    *拼团成功后，即开通沃粉会员月卡，平均每年<span>可省9980元</span>
+                </p>
+                <p>
+                    *拼团失败后，系统会在1~3个工作日内处理退款，所退款项将原路退回原支付账户中
+                </p>
+            </div>
+        </div>
+        <transition name="van-fade">
+            <success-popup v-show="showSuccessPupup" @closeSuccessPupup="closeSuccessPupup" :successType="successType" @toUse="toUse" @createCollage="createCollage" :code="code"></success-popup>
+        </transition>
+        <transition name="van-fade">
+            <share-popup v-show="showSharePupup" @closeSharePopup="closeSharePopup" :img="shareImg"></share-popup>
+        </transition>
+        <van-loading v-if="loading" size="24px" type="spinner" vertical style="padding-top:45%;">加载中...</van-loading>
+    </div>
+</template>
+
+<script>
+    import { CountDown, Loading } from 'vant'
+    import * as core from '../api/activeInfo'
+    import { priceFormat, timeFormat, trackEvent } from '../common/js/util'
+    import defaultImg from '../assets/images/default-user-img.png'
+    import SuccessPopup from '../components/successPopup/SuccessPopup'
+    import SharePopup from '../components/sharePopup/sharePopup'
+    import { clearTimeout, setTimeout } from 'timers'
+    export default {
+        name: 'activeInfo',
+        data() {
+            return {
+                merchantId: window.infoData.merchantId,
+                loading: true,
+                collageId: null,
+                gameId: null,
+                goodsInfo: null,
+                userList: [],
+                showSuccessPupup: false,
+                successType: 1, //1为参团成功,2为团员拼团成功,3团长拼团成功
+                showSharePupup: false,
+                role: null,
+                status: null,
+                surplusNumber: null, //缺少人数
+                time: null,
+                successTime: null,
+                joinStatus: false,
+                isTips: null,
+                shareImg: null,
+                code: null
+            }
+        },
+        created(){
+            this.collageId = this.$route.query.collageId
+            this.getCollageDetail({collageId: this.collageId})
+            if(this.$route.query.popupType && this.$route.query.popupType != '0'){
+                this.successType = this.$route.query.popupType
+                this.showSuccessPupup = true
+            }
+        },
+        methods:{
+            getCollageDetail(opts){
+                core.getCollageDetail(opts).then(res => {
+                    //console.log(res)
+                    if(res.code && res.code == '00'){
+                        this.gameId = res.result.gameId
+                        this.role = res.result.role
+                        this.userList = res.result.qyGameCollageRecordResultList
+                        this.status = res.result.status
+                        this.surplusNumber = res.result.surplusNumber
+                        this.goodsInfo = res.result.gameResult
+                        if(res.result.successTime){
+                            this.successTime = res.result.successTime - res.result.createTime
+                        }else{
+                            this.time = res.result.expireTime - res.result.nowTime
+                        }
+                        this.joinStatus = res.result.join
+                        this.isTips = res.result.isTips
+                        this.$nextTick(() => {
+                            this.loading = false
+                            if(this.status == 'SUCCESS' && this.isTips == 'N' && this.role == 'leader'){
+                                this.successType = 3
+                                this.showSuccessPupup = true
+                            }else if(this.status == 'SUCCESS' && this.isTips == 'N' && this.role == 'partner'){
+                                this.successType = 2
+                                this.showSuccessPupup = true
+                            }
+                        });
+                    } else{
+                        this.loading = false
+                        this.$toast(res.message)
+                    }
+                }).catch(err => {
+                    this.$toast("网络错误")
+                })
+            },
+            priceFixed(val){
+                return priceFormat(val)
+            },
+            dateFormat(val){
+                return timeFormat(val, 2)
+            },
+            toDetail(){
+                if(!this.joinStatus){
+                    trackEvent('被邀请页详情按钮')
+                }else{
+                    if(this.role == 'leader'){
+                        trackEvent('团长邀请页详情按钮')
+                    } else {
+                        trackEvent('团员成功页详情按钮')
+                    }
+                }
+
+                window.location.href = 'https://v.urpass.cn/f/q/' + this.merchantId + '.html/openMembers'
+            },
+            toUse(params){
+                if(params == 'leaderPopUse'){
+                    trackEvent('团长拼团成功弹窗前去使用按钮')
+                }else{
+                    if(this.role == 'leader'){
+                        trackEvent('团长拼团成功页前去使用按钮')
+                    } else {
+                        trackEvent('团员拼团成功页前去使用按钮')
+                    }
+                }
+
+                window.location.href = 'https://v.urpass.cn/f/q/' + this.merchantId + '.html/'
+            },
+            joinPayCollage(){
+                let returnUrl = encodeURI(window.location.href + '&popupType=1')
+                core.joinCollage({collageId: this.collageId, returnUrl: returnUrl}).then(res => {
+                    //console.log(res)
+                    if(res.code && res.code == '00'){
+                        if(res.result.goUrl){
+                            window.location.href = res.result.goUrl
+                            trackEvent('被邀请页参团按钮')
+                        }
+                    }else if(res.code && res.code == '01' && res.isLogin == 'false'){
+                        this.$toast("未登录用户")
+                        let timer = null
+                        clearTimeout(timer)
+                        timer = setTimeout(() => {
+                            this.loading = false
+                            if(res.url){
+                                let regIndex = /^\//gi;
+                                let url = res.url
+                                if(regIndex.test(url)){
+                                    window.location.href = res.url + "?referer=" + encodeURIComponent(window.location.href)
+                                }else{
+                                    window.location.href = res.url
+                                }
+                                //trackEvent('登录')
+                            }
+                        },1000)
+                    } else {
+                        this.$toast(res.message)
+                    }
+                }).catch(err => {
+                    this.$toast("网络错误")
+                })
+            },
+            showLeaderGift(){
+                core.showGifts({collageId: this.collageId}).then(res => {
+                    //console.log(res)
+                    if(res.code && res.code == '00'){
+                        if(res.result){
+                            this.code = res.result.code
+                            this.successType = 3
+                            this.showSuccessPupup = true
+                            trackEvent('团长拼团成功页查看奖品按钮')
+                        }
+                    }else if(res.code && res.code == '01' && res.isLogin == 'false'){
+                        this.$toast("未登录用户")
+                        let timer = null
+                        clearTimeout(timer)
+                        timer = setTimeout(() => {
+                            this.loading = false
+                            if(res.url){
+                                let regIndex = /^\//gi;
+                                let url = res.url
+                                if(regIndex.test(url)){
+                                    window.location.href = res.url + "?referer=" + encodeURIComponent(window.location.href)
+                                }else{
+                                    window.location.href = res.url
+                                }
+                                //trackEvent('登录')
+                            }
+                        },1000)
+                    } else {
+                        this.$toast(res.message)
+                    }
+                }).catch(err => {
+                    console.log(err)
+                })
+            },
+            toInvite(){
+                core.getSharePic({collageId: this.collageId}).then(res => {
+                    //console.log(res)
+                    if(res.code && res.code == '00'){
+                        if(res.result){
+                            this.shareImg = res.result
+                            this.showSharePupup = true
+                            if(this.role == 'leader'){
+                                trackEvent('团长邀请页邀请好友按钮')
+                            } else {
+                                trackEvent('团员成功页邀请好友按钮')
+                            }
+                        }
+                    }else if(res.code && res.code == '01' && res.isLogin == 'false'){
+                        this.$toast("未登录用户")
+                        let timer = null
+                        clearTimeout(timer)
+                        timer = setTimeout(() => {
+                            this.loading = false
+                            if(res.url){
+                                let regIndex = /^\//gi;
+                                let url = res.url
+                                if(regIndex.test(url)){
+                                    window.location.href = res.url + "?referer=" + encodeURIComponent(window.location.href)
+                                }else{
+                                    window.location.href = res.url
+                                }
+                                //trackEvent('登录')
+                            }
+                        },1000)
+                    } else {
+                        this.$toast(res.message)
+                    }
+                }).catch(err => {
+                    console.log(err)
+                })
+
+            },
+            joinCollage(params){
+                if(params == 'leaderJoin'){
+                    trackEvent('团长拼团成功页我要参团按钮')
+                }
+                this.$router.push({path:'/',query:{gameId: this.gameId}})
+            },
+            createCollage(params){
+                if(params == 'partnerOpen'){
+                    trackEvent('团员拼团成功我要开团按钮')
+                }else if(params == 'partnerPopOpen'){
+                    trackEvent('团员拼团成功弹窗我要开团按钮')
+                }else if(params == 'failOpen'){
+                    trackEvent('拼团失败我要开团按钮')
+                }
+                this.$router.push({path:'/',query:{gameId: this.gameId}})
+            },
+            closeSuccessPupup(){
+                this.showSuccessPupup = false;
+                if(this.$route.query.popupType && this.$route.query.popupType == 1){
+                    this.$router.replace({path:'/acitveInfo',query:{collageId: this.collageId,popupType: 0}})
+                }
+                if(this.status == 'SUCCESS' && this.isTips == 'N'){
+                    this.showSuccessPupup = false
+                    this.updateTips({collageId: this.collageId})
+                }
+            },
+            closeSharePopup(){
+                this.showSharePupup = false;
+            },
+            updateTips(opts){
+                core.updateTips(opts).then(res => {
+                    if(res.code && res.code == '00'){
+                        //console.log(res)
+                    }
+                }).catch(err => {
+                    console.log(err)
+                })
+            },
+            dateFinish(){
+                this.getCollageDetail({collageId: this.collageId})
+            }
+        },
+        components: {
+            [CountDown.name]: CountDown,
+            [Loading .name]: Loading,
+            SuccessPopup,
+            SharePopup
+        }
+    }
+</script>
+<style lang="less" scoped>
+    @import "../common/style/mixins";
+    .active-info {
+        width: 375px;
+        height: auto;
+        min-height: 100vh;
+        background: rgba(250,69,43,1);
+        padding: 10px 12px;
+        box-sizing: border-box;
+        .user-status {
+            width:351px;
+            background:rgba(255,251,248,1);
+            border-radius:15px;
+            padding: 16px 12px 30px 12px;
+            box-sizing: border-box;
+            position: relative;
+            margin-bottom: 10px;
+            .status-icon {
+                text-align: center;
+                img {
+                    width: 45px;
+                    height: 45px;
+                }
+            }
+            .status-text {
+                margin-top: 16px;
+                text-align: center;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                img {
+                    width: 13px;
+                    height: 14px;
+                }
+                p {
+                    font-size:18px;
+                    font-family:PingFang SC;
+                    font-weight:500;
+                    color:rgba(120,50,24,1);
+                    padding: 0 13px;
+                    margin: 0;
+                }
+                .success {
+                    color:rgba(250,69,43,1);
+                }
+                .err {
+                    color: rgba(33, 33, 33, 1);
+                }
+            }
+            .status-subtext {
+                margin-top: 12px;
+                text-align: center;
+                font-size:12px;
+                font-family:PingFang SC;
+                font-weight:500;
+                color:rgba(136,74,50,1);
+                .err {
+                    color: rgba(153, 153, 153, 1);
+                }
+            }
+            .status-line{
+                margin: 24px 0 25px 0;
+                width: 100%;
+                height: 4px;
+                display: flex;
+                img {
+                    width: 100%;
+                    height: 4px;
+                }
+            }
+            .gift-info {
+                display: flex;
+                justify-content: flex-start;
+                align-items: center;
+                .gift-info-img {
+                    height: 60px;
+                    width: 92px;
+                    margin-left: 12px;
+                    img {
+                        width: 100%;
+                        height: 100%;
+                    }
+                }
+                .gift-info-cont {
+                    width: 150px;
+                    margin-left: 21px;
+                    p {
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+                    .name {
+                        font-size:16px;
+                        font-family:PingFang SC;
+                        font-weight:600;
+                        color:rgba(45,43,50,1);
+                        margin: 0;
+                        line-height: 1.2;
+                    }
+                    .text {
+                        font-size:12px;
+                        font-family:PingFang SC;
+                        font-weight:400;
+                        color:rgba(33,33,33,1);
+                        margin: 8px 0 0;
+                        line-height: 1.2;
+                    }
+                    .price {
+                        display: flex;
+                        justify-content: flex-start;
+                        align-items: baseline;
+                        margin-top: 7px;
+                        line-height: 1.2;
+                        font-size: 0;
+                        .money {
+                            font-size:18px;
+                            font-family:PingFang SC;
+                            font-weight:bold;
+                            color:rgba(244,16,0,1);
+                            display: inline-block;
+                            margin: 0;
+                            .money-label {
+                                font-size:11px;
+                                font-family:PingFang SC;
+                                font-weight:bold;
+                                color:rgba(244,16,0,1);
+                                margin-right: 2px;
+                                position: relative;
+                                bottom: 0.5px;
+                            }
+                        }
+                        .label {
+                            margin: 0;
+                            width: 47px;
+                            height: 16px;
+                            margin-left: 4px;
+                            background: url('../assets/images/label.png') no-repeat center;
+                            background-size: 100% 100%;
+                            position: relative;
+                            top: 1.1px;
+                        }
+                    }
+                    .maket-price {
+                        margin: 0;
+                        font-size:12px;
+                        font-family:PingFang SC;
+                        font-weight:400;
+                        color:rgba(153,153,153,1);
+                        margin-top: 10px;
+                        span {
+                            s {
+                                margin-left: 8px;
+                            }
+                        }
+                    }
+                }
+                .gift-info-btn {
+                    button {
+                        outline: none;
+                        border:none;
+                        width:53px;
+                        height:24px;
+                        line-height: 24px;
+                        font-size:12px;
+                        color: #fff;
+                        background:rgba(255,59,50,1);
+                        border-radius:12px;
+                    }
+                }
+                .gift-info-success {
+                    margin-left: 21px;
+                    p {
+                        margin: 0;
+                        font-size:16px;
+                        font-family:PingFang SC;
+                        font-weight:bold;
+                        color:rgba(45, 43, 50, 1);
+                        margin-bottom: 16px;
+                    }
+                    button {
+                        outline: none;
+                        border: none;
+                        width:111px;
+                        height:28px;
+                        background:rgba(255,59,50,1);
+                        border-radius:14px;
+                        font-size:14px;
+                        font-family:PingFang SC;
+                        font-weight:400;
+                        color:rgba(255,255,255,1);
+                        margin: 0;
+                        display: block;
+                    }
+                }
+            }
+            .left-dot {
+                position: absolute;
+                left: 20px;
+                bottom: -30px;
+                z-index: 1;
+                height: 50px;
+                width: 11px;
+                img {
+                    height: 50px;
+                    width: 11px;
+                }
+            }
+            .right-dot {
+                position: absolute;
+                right: 20px;
+                bottom: -30px;
+                z-index: 1;
+                height: 50px;
+                width: 11px;
+                img {
+                    height: 50px;
+                    width: 11px;
+                }
+            }
+        }
+        .user-info {
+            padding: 21px 12px 36px 12px;
+            background: rgba(255,255,255,1);
+            .info-title {
+                text-align: center;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                img {
+                    width: 20px;
+                    height: 4px;
+                }
+                p {
+                    font-size:20px;
+                    font-family:PingFang SC;
+                    font-weight:500;
+                    color:rgba(120,50,24,1);
+                    padding: 0 9px;
+                    margin: 0;
+                }
+                .success {
+                    color:rgba(250,69,43,1);
+                }
+            }
+            .info-time{
+                margin-top: 12px;
+                color: rgba(253,96,56,1);
+                text-align: center;
+                .item {
+                    display: inline-block;
+                    width:21px;
+                    height:19px;
+                    line-height: 20px;
+                    background:rgba(253,96,56,1);
+                    border-radius:4px;
+                    color: #fff;
+                    font-size: 12px;
+                    text-align: center;
+                    box-sizing: border-box
+                }
+                .icon {
+                    padding: 0 3px;
+                    display: inline-block;
+                    height:19px;
+                    width: 6px;
+                }
+            }
+            .info-time-success {
+                color: rgba(51,51,51,1);
+                .item {
+                    width:auto;
+                    background:rgba(51,51,51,1);
+                    margin-right: 0;
+                    &:first-child {
+                        font-size:15px;
+                        margin-right: 8px;
+                        width: auto;
+                        background: #fff;
+                        color: rgba(51,51,51,1);
+                    }
+                    span {
+                        padding: 0 3px;
+                    }
+                }
+            }
+            .info-text {
+                margin-top: 12px;
+                font-size:15px;
+                text-align: center;
+                .group-lack {
+                    color: rgba(120, 50, 24, 1);
+                    span {
+                        color: rgba(250, 69, 43, 1);
+                    }
+                }
+            }
+            .info-users-row {
+                margin-top: 20px;
+                margin-bottom: 16px;
+                .list {
+                    display: flex;
+                    justify-content: center;
+                    flex-wrap: wrap;
+                    .item {
+                        width: 50px;
+                        height: 50px;
+                        position: relative;
+                        margin: 0 13px;
+                        img {
+                            width: 100%;
+                            height: 100%;
+                        }
+                        .label {
+                            position: absolute;
+                            left: 9px;
+                            bottom: -3px;
+                            width:32px;
+                            height:14px;
+                            text-align: center;
+                            background: url('../assets/images/leader-label.png');
+                            background-size: 100% 100%;
+                        }
+                    }
+                }
+                .db-list {
+                    justify-content: flex-start;
+                    .item {
+                        margin-bottom: 12px;
+                    }
+                }
+            }
+            .info-succes {
+                margin-top: 13px;
+                margin-bottom: 13px;
+                font-size:18px;
+                font-family:PingFang SC;
+                font-weight:500;
+                color:rgba(120,50,24,1);
+                line-height:26px;
+                p {
+                    margin: 0;
+                    text-align: center;
+                    color: rgba(120, 50, 24, 1);
+                }
+                div {
+                    margin-top: 14px;
+                    text-align: center;
+                    img {
+                        width: 12px;
+                        height: 12px;
+                    }
+                }
+            }
+            .info-err-hint {
+                font-size:18px;
+            }
+            .info-btn-group {
+                .btn {
+                    width:100%;
+                    height:84px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    text-align: center;
+                    button {
+                        outline: none;
+                        border: none;
+                        width:292px;
+                        height:54px;
+                        font-size:20px;
+                        border-radius:28px;
+                        color: #fff;
+                        border: 4px solid #ffdb68;
+                    }
+                }
+                .info-succee-btn {
+                    button {
+                        // background: #ffdb68 url("../assets/images/btn-success.png") no-repeat center;
+                        // background-size: 100% 100%;
+                        // box-shadow: 0px 5px 25px rgba(255,130,25,0.4);
+                        vertical-align: middle;
+                        background: linear-gradient(0deg, rgba(255, 130, 25, 1) 0%, rgba(255, 199, 20, 1) 100%);
+                        box-shadow: 0px 8px 12px 0px #FFB601 inset, 0px -7px 12px 0px #FF7A0A inset, 0px 5px 25px rgba(255,130,25,0.4);
+                    }
+                }
+                .info-default-btn {
+                    margin-bottom: 22px;
+                    button {
+                        height: 54px;
+                        // background: #ffdb68 url("../assets/images/btn-default.png") no-repeat center;
+                        // background-size: 100% 100%;
+                        // box-shadow: 0px 5px 25px rgba(250,69,43,0.4);
+                        background: linear-gradient(0deg, #FF3931 0%, #FF953C 100%);
+                        box-shadow: 0px 8px 12px 0px #FF6A23 inset, 0px -7px 12px 0px #FF2721 inset, 0px 5px 25px rgba(250,69,43,0.4);
+                    }
+                }
+            }
+            .info-users-col {
+                margin-bottom: 32px;
+                .list {
+                    .item {
+                        margin-bottom: 16px;
+                        display: flex;
+                        justify-content: flex-start;
+                        align-items: center;
+                        &:last-child {
+                            margin-bottom: 0;
+                        }
+                        .item-left  {
+                            display: flex;
+                            justify-content: flex-start;
+                            img {
+                                width: 50px;
+                                height: 50px;
+                                margin-right: 8px;
+                            }
+                            div {
+                                width: 220px;
+                                padding: 8px 0;
+                                box-sizing: border-box;
+                                p {
+                                    margin: 0;
+                                    white-space: nowrap;
+                                    overflow: hidden;
+                                    text-overflow: ellipsis;
+                                }
+                                .user-name {
+                                    font-size:16px;
+                                    font-family:PingFang SC;
+                                    font-weight:400;
+                                    color:rgba(33,33,33,1);
+                                    margin-bottom: 10px;
+                                }
+                                .add-time {
+                                    font-size:12px;
+                                    font-family:PingFang SC;
+                                    font-weight:400;
+                                    color:rgba(153,153,153,1);
+                                }
+                            }
+                        }
+
+                        .label {
+                            width:49px;
+                            height:20px;
+                            background:rgba(218,218,218,1);
+                            border-radius:4px;
+                            text-align: center;
+                            color: #fff;
+                            font-size: 12px;
+                            text-align: center;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            span {
+                                font-size: 24px;
+                                transform: scale(0.5);
+                                transform-origin: center;
+                                margin: 0;
+                                padding: 0;
+                            }
+                        }
+                        .label-default {
+                            background:rgba(253,96,56,1);
+                        }
+                    }
+                    .item-lack {
+                        display: flex;
+                        justify-content: flex-start;
+                        align-items: center;
+                        .item-left  {
+                            display: flex;
+                            justify-content: flex-start;
+                            img {
+                                width: 50px;
+                                height: 50px;
+                                margin-right: 8px;
+                            }
+                            div {
+                                width: 265px;
+                                font-size:14px;
+                                font-family:PingFang SC;
+                                font-weight:400;
+                                color:rgba(153,153,153,1);
+                                display: flex;
+                                justify-content: flex-start;
+                                align-items: center;
+                                .lack {
+                                    span{
+                                        color: rgba(250, 69, 43, 1)
+                                    }
+                                }
+
+                            }
+                        }
+                    }
+                }
+            }
+
+        }
+        .user-explain {
+            padding: 33px 12px 21px 12px;
+            background: rgba(255,255,255,1);
+            p {
+                margin: 0;
+                font-size:13px;
+                font-family:PingFang SC;
+                color:rgba(120,50,24,1);
+                line-height:20px;
+                margin-bottom: 5px;
+                span {
+                    color:rgba(250, 69, 43, 1)
+                }
+            }
+        }
+    }
+</style>

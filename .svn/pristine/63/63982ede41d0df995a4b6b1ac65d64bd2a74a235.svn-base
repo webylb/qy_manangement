@@ -1,0 +1,51 @@
+import axios from '../common/js/http'
+import CONFIG from './config'
+import qs from 'qs'
+import {requestDispose} from '../common/js/util'
+
+/**
+ * 获取活动信息
+ * */
+export function getHomeActiveInfo(opts) {
+    return axios.post(CONFIG.HOMEAPI.GET_ACTIVE_INFO, qs.stringify({
+        gameId: opts.gameId,
+        merchantId: opts.merchantId
+    }), {headers: {showLoading: false}}).then(res => {
+        return requestDispose(res)
+    })
+}
+
+/**
+ * 创建拼团
+ * */
+
+export function createGroup(opts) {
+    return axios.post(CONFIG.HOMEAPI.CREATE_GROUP, qs.stringify({
+        gameId: opts.gameId,
+        returnUrl: opts.returnUrl,
+    }), {headers: {showLoading: false}}).then(res => {
+        return requestDispose(res, true, true)
+    })
+}
+
+/**
+ * 获取未拼团列表
+ * */
+
+export function getGroupList(opts) {
+    return axios.post(CONFIG.HOMEAPI.GROUP_LIST, qs.stringify({
+        gameId: opts.gameId
+    }), {headers: {showLoading: false}}).then(res => {
+        return requestDispose(res)
+    })
+}
+
+/**
+ * 判断是否登录
+ * */
+
+export function isLogin(opts) {
+    return axios.post(CONFIG.HOMEAPI.IS_LOGIN).then(res => {
+        return requestDispose(res, true, true)
+    })
+}

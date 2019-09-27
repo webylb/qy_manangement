@@ -1,0 +1,752 @@
+<template>
+    <div class="home">
+        <section>
+            <img class="banner_box" src="../assets/images/home/top.jpg" alt=""/>
+        </section>
+        <section class="secondPart">
+            <div class="part countDown_box">
+                <Title :child="groupTitle.countDown"></Title>
+                <van-count-down :time="infoList.qyGameResult.countDown" format="DD 天 HH 时 mm 分 ss 秒"
+                                style="margin-top: 11px; text-align: center">
+                    <template v-slot="timeData">
+                        <span class="item">{{ timeData.days }}</span>
+                        <span class="item_font_color">天</span>
+                        <span class="item">{{ timeData.hours }}</span>
+                        <span class="item_font_color">时</span>
+                        <span class="item">{{ timeData.minutes }}</span>
+                        <span class="item_font_color">分</span>
+                        <span class="item">{{ timeData.seconds }}</span>
+                        <span class="item_font_color">秒</span>
+                    </template>
+                </van-count-down>
+            </div>
+            <div class="part recruit_box" v-show="marqueeList.length > 0">
+                <Title :child="groupTitle.recruit"></Title>
+                <div class="marquee_box"
+                     v-bind:class="{ updateClass_one: marqueeList.length === 1, updateClass_two: marqueeList.length === 2 }">
+                    <ul class="marquee_list" :class="{marquee_top:animate}">
+                        <li v-for="(item, index) in marqueeList" class="user_box" :key="index">
+                            <img v-if="item.headImage" class="img" :src="item.headImage" alt="">
+                            <img v-else class="img" src="./../assets/images/home/default_pic.png" alt="">
+                            <div class="li_box">
+                                <p class="user_text">{{item.nickname}}&nbsp;&nbsp;还差 <span
+                                        class="active">{{item.surplusNumber}}人</span></p>
+                                <van-count-down :time="item.countDown" format="DD 天 HH 时 mm 分 ss 秒"
+                                                style="margin-top: 8px; text-align: left">
+                                    <template v-slot="timeData">
+                                        <span class="user_time">剩余&nbsp;&nbsp;</span>
+                                        <span class="user_time" v-show="timeData.days > 0">{{ timeData.days }}</span>
+                                        <span class="user_time" v-show="timeData.days > 0">天</span>
+                                        <span class="user_time">{{ timeData.hours }}</span>
+                                        <span class="user_time">时</span>
+                                        <span class="user_time">{{ timeData.minutes }}</span>
+                                        <span class="user_time">分</span>
+                                        <span class="user_time">{{ timeData.seconds }}</span>
+                                        <span class="user_time">秒</span>
+                                    </template>
+                                </van-count-down>
+                            </div>
+                            <div class="go_btn" @click="goGroup(item.id, 'join','join')">去参团</div>
+                        </li>
+                    </ul>
+                </div>
+                <div class="more" @click="show = true" v-if="checkMore">查看更多 ></div>
+            </div>
+            <div class="part introduce_box">
+                <Title :child="groupTitle.introduce"></Title>
+                <div class="img">
+                    <img v-for="(item, index) in images" :src="item" alt="" :key="index">
+                </div>
+                <p class="text">
+                    拼团成功即可3元购买原价9.9元的沃粉会员卡 <br/>
+                    团长可获得爱奇艺月卡一张
+                </p>
+                <div class="buttons">
+                    <div class="btns" v-if="infoList.isCreate" @click="goGroup(infoList.createId,null,'myOpen')">我开的团</div>
+                    <div class="btns" v-if="infoList.isJoin" @click="goGroup(infoList.joinId,null,'myJoin')">我参与的团</div>
+                </div>
+            </div>
+            <div class="part detail_box">
+                <Title :child="groupTitle.detail"></Title>
+                <p class="explain">
+                    嘿！伙计 <br/>
+                    这是一份超值的沃粉会员特权卡 <br/>
+                    据小沃忠实用户反应 <br/>
+                    用沃粉会员，每年平均至少可以为您节省9980元 <br/>
+
+                    有了沃粉会员卡，吃喝玩乐统统打折~ <br/>
+                    团长拼团成功奖励爱奇艺会员月卡一张哦~ <br/>
+                </p>
+                <Title :child="groupTitle.rules"></Title>
+                <div class="rules_box">
+                    <p class="rules" v-for="(item, index) in textGroup" :key="index" v-bind:class="{ active : index === 2}">
+                        {{item}}</p>
+                </div>
+                <div class="phone">客服热线：<a href="tel:400-6680-091" class="active">400-6680-091 转 2</a></div>
+            </div>
+        </section>
+        <section class="footerPart">
+            <div class="button" @click="createGroup">
+                <div class="title"><span v-if="!infoList.isVip">{{infoList.qyGameResult.payMoney}}元/</span>立即开团</div>
+                <div class="price">原价:<em>￥9.9</em></div>
+            </div>
+        </section>
+        <van-popup v-model="show" class="prop" round>
+            <h1 class="title" @click="show = false">沃粉会员招募中</h1>
+            <van-divider style="margin: 0"/>
+            <div style=" max-height: 378px; overflow: scroll;">
+                <ul style="box-sizing: border-box; padding: 21px 0 0 0;">
+                    <li class="user_box prop_user_box" v-for="(item, index) in propMarqueeList" :key="index" style="width: 311px">
+                        <img v-if="item.headImage" class="img" :src="item.headImage" alt="">
+                        <img v-else class="img" src="./../assets/images/home/default_pic.png" alt="">
+                        <div class="li_box">
+                            <p class="user_text">{{item.nickname}}&nbsp;&nbsp;还差 <span
+                                    class="active">{{item.surplusNumber}}人</span></p>
+                            <van-count-down :time="item.countDown" format="DD 天 HH 时 mm 分 ss 秒"
+                                            style="margin-top: 8px; text-align: left">
+                                <template v-slot="timeData">
+                                    <span class="user_time">剩余&nbsp;&nbsp;</span>
+                                    <span class="user_time" v-show="timeData.days > 0">{{ timeData.days }}</span>
+                                    <span class="user_time" v-show="timeData.days > 0">天</span>
+                                    <span class="user_time">{{ timeData.hours }}</span>
+                                    <span class="user_time">时</span>
+                                    <span class="user_time">{{ timeData.minutes }}</span>
+                                    <span class="user_time">分</span>
+                                    <span class="user_time">{{ timeData.seconds }}</span>
+                                    <span class="user_time">秒</span>
+                                </template>
+                            </van-count-down>
+                        </div>
+                        <div class="go_btn" @click="goGroup(item.id,'join','popJoin')">去参团</div>
+                    </li>
+                </ul>
+                <van-divider style="margin: 0"/>
+                <div class="prop_text" v-show="propMarqueeList.length === 10">仅显示10个正在拼单的人</div>
+            </div>
+        </van-popup>
+    </div>
+</template>
+
+<script>
+    import Title from '@/components/Title/Title'
+    import * as core from '../api/home'
+    import {CountDown, Swipe, SwipeItem, Overlay, Divider, Popup} from 'vant'
+    import { trackEvent } from '../common/js/util'
+    import lineLeft from './../assets/images/home/line_left.png'
+    import lineRight from './../assets/images/home/line_right.png'
+    import doubleLeft from './../assets/images/home/double_line_left.png'
+    import doubleRight from './../assets/images/home/double_line_right.png'
+    import starLeft from './../assets/images/home/star_left.png'
+    import starRight from './../assets/images/home/star_right.png'
+    import jiantou from './../assets/images/home/jiantou.png'
+    import step1 from './../assets/images/home/step1.png'
+    import step2 from './../assets/images/home/step2.png'
+    import step3 from './../assets/images/home/step3.png'
+
+    export default {
+        name: 'home',
+        data() {
+            return {
+                loading: false,
+                finished: false,
+                gameId: null,
+                marqueeList: [],
+                propMarqueeList: [],
+                animate: false,
+                checkMore: false,
+                show: false,
+                groupTitle: {
+                    countDown: {
+                        style: {
+                            width: '20px',
+                            height: '4px',
+                            color: '#783218',
+                            fontSize: '20px'
+                        },
+                        content: {
+                            imgLeft: lineLeft,
+                            imgRight: lineRight,
+                            text: '距结束'
+                        }
+                    },
+                    recruit: {
+                        style: {
+                            width: '12px',
+                            height: '14px',
+                            color: '#FD6038',
+                            fontSize: '20px'
+                        },
+                        content: {
+                            imgLeft: doubleLeft,
+                            imgRight: doubleRight,
+                            text: '团员招募中'
+                        }
+                    },
+                    introduce: {
+                        style: {
+                            width: '12px',
+                            height: '14px',
+                            color: '#FD6038',
+                            fontSize: '20px'
+                        },
+                        content: {
+                            imgLeft: doubleLeft,
+                            imgRight: doubleRight,
+                            text: '玩法介绍'
+                        }
+                    },
+                    detail: {
+                        style: {
+                            width: '12px',
+                            height: '14px',
+                            color: '#FD6038',
+                            fontSize: '20px'
+                        },
+                        content: {
+                            imgLeft: doubleLeft,
+                            imgRight: doubleRight,
+                            text: '活动详情'
+                        }
+                    },
+                    rules: {
+                        style: {
+                            width: '102px',
+                            height: '9px',
+                            color: '#212121',
+                            fontSize: '16px'
+                        },
+                        content: {
+                            imgLeft: starLeft,
+                            imgRight: starRight,
+                            text: '活动规则'
+                        }
+                    }
+                },
+                textGroup: [
+                    "1.参与方式：在拼团活动详情页中，点击“我要开团“或“去参团”进入支付页；",
+                    "2.拼团有效期：请在拼团有效期内完成拼团，如果在有效期内，未达成相应参与人数，则拼团失败；",
+                    "3.活动期间同一个用户可同时开团一次和参团一次;",
+                    "4.邀请拼团：开团或参团成功后，可将拼团信息分享给微信朋友圈、群及好友，好友参团可享受拼团价格；",
+                    "5.拼团成功：拼团有效期内，支付的用户达到参团人数，则拼团成功；",
+                    "6.拼团失败：拼团有效期结束后，未达成相应参团人数的团，则拼团失败，拼团失败的会员卡订单，系统会在1-3个工作日内处理退款，原路退回原支付账户中；",
+                    "7.同一登录账号、同一手机号、同一终端设备号同一支付账号等合理显示为同一用户的情形，均视为同一用户；",
+                    "8.团长开团成功，可额外获得爱奇艺月卡一张，以短信及公众号消息内通知；",
+                    "9.一旦发现刷奖行为，将直接取消奖励。",
+                ],
+                infoList: {
+                    createId: null,
+                    joinId: null,
+                    isVip: true,
+                    isCreate: false,
+                    isJoin: false,
+                    qyGameResult: {
+                        payMoney: null,
+                        countDown: 0
+                    }
+                },
+                images: [
+                    step1,
+                    jiantou,
+                    step2,
+                    jiantou,
+                    step3
+                ]
+            }
+        },
+        methods: {
+            // 获取活动信息
+            getActiveInfo(opts) {
+                core.getHomeActiveInfo(opts).then(res => {
+                    if (res.code && res.code == '00') {
+                        for (var i in res.result.qyGameResult) {
+                            res.result.qyGameResult.countDown = res.result.qyGameResult.expireTime - res.result.qyGameResult.nowTime
+                        }
+                        this.infoList = res.result
+                    }
+                }).catch(err => {
+                    this.$toast("网络错误")
+                })
+            },
+            // 立即创建拼团
+            createGroup() {
+                let obj = {
+                    gameId: window.infoData.gameId,
+                    returnUrl: this.infoList.isVip ? '' : window.location.href
+                }
+                core.createGroup(obj).then(res => {
+                    if (res.code && res.code == '00') {
+                        if (res.result.goUrl) {
+                            window.location.href = res.result.goUrl
+                        } else {
+                            this.$router.push({path: '/acitveInfo', query: {collageId: res.result.outOrderId}})
+                        }
+
+                        if (this.infoList.isVip) {
+                            trackEvent('首页O元开团按钮')
+                        } else {
+                            trackEvent('首页3元开团按钮')
+                        }
+
+                    } else if (res.code && res.code == '01') {
+                        this.$toast("未登录用户")
+                        let timer = null
+                        clearTimeout(timer)
+                        timer = setTimeout(() => {
+                            this.loading = false
+                            if (res.url) {
+                                let regIndex = /^\//gi;
+                                let url = res.url
+                                if (regIndex.test(url)) {
+                                    window.location.href = res.url + "?referer=" + encodeURIComponent(window.location.href)
+                                } else {
+                                    window.location.href = res.url
+                                }
+                                //trackEvent('登录')
+                            }
+                        }, 1500)
+                    } else {
+                        this.$toast(res.message)
+                    }
+                })
+            },
+            // 获取未拼团列表
+            getActiveGroupList(opts) {
+                core.getGroupList(opts).then(res => {
+                    for (var i in res.result) {
+                        res.result[i].countDown = res.result[i].expireTime - res.result[i].nowTime
+                    }
+                    this.propMarqueeList =[ ... res.result]
+                    this.marqueeList = res.result
+                    // this.marqueeList.push(res.result[0])
+                    if (this.marqueeList.length > 3) {
+                        this.checkMore = true
+                        this.loop()
+                    }
+                })
+            },
+            // 无限滚动公告
+            showMarquee() {
+                this.animate = true
+                setTimeout(() => {
+                    this.marqueeList.push(this.marqueeList[0])
+                    this.marqueeList.shift()
+                    this.animate = false
+                }, 500)
+            },
+            loop() {
+                setInterval(this.showMarquee, 2000)
+            },
+            // 去参团
+            goGroup(id, join, type) {
+                if (join) {
+                    this.$router.push({path: '/acitveInfo', query: {collageId: id}})
+                } else {
+                    core.isLogin().then(res => {
+                        if (res.code && res.code == '01') {
+                            this.$toast("未登录用户")
+                            let timer = null
+                            clearTimeout(timer)
+                            timer = setTimeout(() => {
+                                this.loading = false
+                                if (res.url) {
+                                    let regIndex = /^\//gi;
+                                    let url = res.url
+                                    if (regIndex.test(url)) {
+                                        window.location.href = res.url + "?referer=" + encodeURIComponent(window.location.href)
+                                    } else {
+                                        window.location.href = res.url
+                                    }
+                                }
+                            }, 1500)
+                        } else if (res.code && res.code == '00') {
+                            this.$router.push({path: '/acitveInfo', query: {collageId: id}})
+                            if (type == 'popJoin') {
+                                trackEvent('更多拼团页去参团按钮')
+                            } else if (type == 'join') {
+                                trackEvent('首页去参团按钮')
+                            } else if (type == 'myJoin') {
+                                trackEvent('首页我参与的团按钮')
+                            } else if (type == 'myOpen') {
+                                trackEvent('首页我开的团按钮')
+                            }
+                        }
+                    })
+                }
+            },
+        },
+        created() {
+            if (this.$route.query.gameId) {
+                window.infoData.gameId = this.$route.query.gameId
+            } else {
+                this.$toast("页面配置错误")
+            }
+            this.getActiveInfo(window.infoData)
+            this.getActiveGroupList({gameId: window.infoData.gameId})
+        },
+        components: {
+            Title,
+            [CountDown.name]: CountDown,
+            [Swipe.name]: Swipe,
+            [SwipeItem.name]: SwipeItem,
+            [Overlay.name]: Overlay,
+            [Divider.name]: Divider,
+            [Popup.name]: Popup
+        }
+    }
+</script>
+
+<style lang="less" scoped>
+    /*@import "../common/style/mixins";*/
+    .home {
+        width: 100%;
+
+        .banner_box {
+            display: block;
+            width: 100%;
+            height: 376px;
+        }
+
+        .prop_user_box {
+            width: 311px !important;
+        }
+
+        .user_box {
+            width: 319px;
+            margin: 0 16px;
+            display: flex;
+            margin-bottom: 25px;
+            justify-content: space-between;
+            align-items: center;
+
+            .img {
+                display: block;
+                width: 40px;
+                height: 40px;
+                margin-right: 12px;
+                /*border-radius: 50%;*/
+                border: none;
+            }
+
+            .li_box {
+                margin-top: 3px;
+                margin-left: -50px;
+            }
+
+            .user_text {
+                font-size: 15px;
+                font-family: PingFang SC;
+                color: #212121;
+                font-weight: 500;
+                margin: 0 auto;
+                padding-top: 3px;
+                box-sizing: border-box;
+            }
+
+            .go_btn {
+                width: 60px;
+                height: 27px;
+                background-color: #FA452B;
+                color: #ffffff;
+                font-size: 13px;
+                font-family: PingFang SC;
+                text-align: center;
+                line-height: 29px;
+                border-radius: 15px;
+            }
+
+            .user_time {
+                font-size: 12px;
+                font-family: PingFang SC;
+                color: #999999;
+            }
+        }
+
+        .prop {
+            width: 343px;
+
+            .title {
+                font-size: 20px;
+                font-family: PingFang SC;
+                font-weight: bold;
+                color: #212121;
+                line-height: 56px;
+                text-align: center;
+                background: url("./../assets/images/home/close_icon.png") no-repeat 314px;
+                background-size: 13px 13px;
+                margin: 0;
+            }
+
+            .prop_text {
+                line-height: 40px;
+                text-align: center;
+                font-size: 13px;
+                font-family: PingFang SC;
+                color: #999999;
+            }
+        }
+
+        .item {
+            display: inline-block;
+            width: 21px;
+            height: 19px;
+            margin: 0 6px;
+            color: #fff;
+            font-size: 12px;
+            font-family: PingFang SC;
+            text-align: center;
+            background-color: #FD6038;
+            border-radius: 4px;
+        }
+
+        .item_font_color {
+            color: #783218;
+        }
+
+        .active {
+            color: #FA452B;
+        }
+
+        .recruit_box {
+            .more {
+                font-size: 13px;
+                font-family: PingFang SC;
+                color: #999999;
+                font-weight: 500;
+                text-align: center;
+            }
+
+        }
+
+        .introduce_box {
+            .img {
+                width: 272px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                box-sizing: border-box;
+                padding: 35px 0 28px 0;
+                margin: 0 auto;
+            }
+
+            img:nth-child(1), img:nth-child(3), img:nth-child(5) {
+                display: inline-block;
+                width: 60px;
+                height: 54px;
+            }
+
+            img:nth-child(2), img:nth-child(4) {
+                display: inline-block;
+                width: 19px;
+                height: 19px;
+                margin: 0 13px;
+            }
+
+            .text {
+                text-align: center;
+                font-size: 13px;
+                font-family: PingFang SC;
+                font-weight: 500;
+                color: rgba(121, 52, 30, 1);
+                line-height: 20px;
+            }
+
+            .buttons {
+                display: flex;
+                width: 320px;
+                margin: 0 auto;
+                justify-content: space-between;
+
+                .btns {
+                    flex: 1;
+                    font-size: 18px;
+                    line-height: 44px;
+                    color: #ffffff;
+                    font-weight: 500;
+                    text-align: center;
+                    border: 4px solid #FFDB68;
+                    background: linear-gradient(0deg, #FF3931 0%, #FF953C 100%);
+                    box-shadow: 0px 8px 12px 0px #FF6A23 inset, 0px -7px 12px 0px #FF2721 inset, 0 3px 15px #FECDC6;
+                    box-sizing: content-box;
+                    border-radius: 50px;
+                    font-family: PingFang SC;
+                    margin: 0 10px;
+                }
+
+                .btns:first-child {
+                    background: linear-gradient(0deg, rgba(255, 130, 25, 1) 0%, rgba(255, 199, 20, 1) 100%);
+                    box-shadow: 0px 8px 12px 0px #FFB601 inset, 0px -7px 12px 0px #FF7A0A inset, 0 5px 15px #FFE4B4;
+                }
+            }
+        }
+
+        .detail_box {
+            padding-bottom: 20px;
+
+            .explain {
+                width: 310px;
+                margin: 26px auto 37px;
+                font-size: 13px;
+                font-family: PingFang SC;
+                font-weight: 500;
+                color: #79341E;
+                line-height: 27px;
+                text-align: center;
+            }
+
+            .rules_box {
+                width: 319px;
+                font-size: 12px;
+                font-family: PingFang SC;
+                font-weight: 500;
+                color: #999999;
+                line-height: 18px;
+                margin: 21px auto;
+            }
+
+            .rules {
+                margin-bottom: 8px;
+                text-align: justify;
+            }
+
+            .phone {
+                width: 200px;
+                height: 32px;
+                background: #FFE1C9;
+                border-radius: 16px;
+                margin: 32px auto 0;
+                font-size: 12px;
+                font-family: PingFang SC;
+                text-align: center;
+                line-height: 32px;
+            }
+        }
+
+        .secondPart {
+            width: 100%;
+            background: linear-gradient(0deg, #FA452B 0%, #FB5233 100%);
+            padding-bottom: 50px;
+            margin-bottom: 60px;
+            position: absolute;
+            margin-top: -22px;
+        }
+
+        .part {
+            width: 351px;
+            background-color: #ffffff;
+            border-radius: 15px;
+            margin: 0 auto;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            padding: 20px 0;
+            position: relative;
+        }
+
+        .part:before {
+            content: '';
+            width: 11px;
+            height: 51px;
+            position: absolute;
+            background: url("./../assets/images/home/join_line.png") no-repeat;
+            background-size: 11px 51px;
+            left: 20px;
+            bottom: -30px;
+            z-index: 1;
+        }
+
+        .part:after {
+            content: '';
+            width: 11px;
+            height: 51px;
+            position: absolute;
+            background: url("./../assets/images/home/join_line.png") no-repeat;
+            background-size: 11px 51px;
+            right: 20px;
+            bottom: -30px;
+            z-index: 1;
+        }
+
+        .part:last-child:before {
+            display: none;
+        }
+
+        .part:last-child:after {
+            display: none;
+        }
+
+        .footerPart {
+            width: 100%;
+            height: 60px;
+            background-color: #ffffff;
+            position: fixed;
+            bottom: 0;
+            z-index: 2;
+            box-shadow: 0px -1px 5px 0px rgba(220, 220, 220, 0.5);
+
+            .button {
+                width: 343px;
+                height: 49px;
+                background: linear-gradient(0deg, rgba(255, 135, 25, 1) 0%, rgba(255, 193, 20, 1) 100%);
+                border-radius: 24px;
+                margin: 5px auto;
+
+                .title {
+                    width: 100%;
+                    font-size: 18px;
+                    font-family: PingFang SC;
+                    font-weight: 500;
+                    color: rgba(255, 255, 255, 1);
+                    line-height: 20px;
+                    text-align: center;
+                    padding-top: 8px;
+                }
+
+                .price {
+                    width: 100%;
+                    font-size: 11px;
+                    font-family: PingFang SC;
+                    font-weight: 400;
+                    text-align: center;
+                    color: rgba(120, 50, 24, 1);
+                    margin: 4px 0 6px 0;
+
+                    em {
+                        text-decoration: line-through;
+                        font-style: normal;
+                    }
+                }
+            }
+        }
+    }
+
+    .home {
+        .marquee_box {
+            display: block;
+            position: relative;
+            width: 100%;
+            height: 200px;
+            overflow: hidden;
+            margin-top: 25px;
+            margin-bottom: 23px;
+        }
+
+        .updateClass_one {
+            height: 63px;
+        }
+
+        .updateClass_two {
+            height: 137px;
+        }
+
+        .marquee_list {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .marquee_top {
+            transition: all 0.5s;
+            margin-top: -73px
+        }
+    }
+</style>

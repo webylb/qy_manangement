@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" viewport-fit=cover content="width = device-width, initial-scale = 1.0, maximum-scale = 1.0, user-scalable = 0"/>
+    <meta name="format-detection" content="telephone=yes"/>
+    <meta name="x5-fullscreen" content="true">
+    <link href="https://c1.51jujibao.com/static/mod/qySaas/static/favicon.ico" rel="shortcut icon" type="image/x-icon">
+    <title>券码核销</title>
+  </head>
+  <body>
+    <noscript>
+      <strong>We're sorry but mfyl doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
+    </noscript>
+    <div id="app"></div>
+    <!-- built files will be auto injected -->
+  </body>
+</html>

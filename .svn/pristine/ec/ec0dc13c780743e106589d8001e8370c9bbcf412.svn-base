@@ -1,0 +1,69 @@
+<template>
+    <div class="my">
+        <section>
+          <div class="my-list">
+            <van-cell-group>
+              <van-cell title="姓名" :value="name" />
+              <van-cell title="手机号" :value="phone" />
+              <van-cell title="门店名称" :value="shopName" />
+              <van-cell title="注册时间" :value="date" />
+            </van-cell-group>
+          </div>
+        </section>
+    </div>
+</template>
+
+<script>
+
+    import { Cell, CellGroup } from 'vant'
+    import { trackEvent } from '../common/js/util'
+
+    export default {
+        name: 'my',
+        data() {
+          return {
+            loading: false,
+            finished: false,
+            name: '聚小宝',
+            phone: '1888888888',
+            shopName: '门店',
+            date: '注册时间'
+          }
+        },
+        created() {
+
+        },
+        methods: {
+
+        },
+        components: {
+          [Cell.name]: Cell,
+          [CellGroup.name]: CellGroup
+        }
+    }
+</script>
+
+<style lang="less" scoped>
+    /*@import "../common/style/mixins";*/
+    .my {
+      background-color: #F5F5F5;
+      width: 100%;
+      height: 100vh;
+      .my-list {
+        font-size:16px;
+        color:rgba(51,51,51,1);
+        span {
+          display: inline-block;
+          height: 22px;
+          line-height: 24px;
+        }
+      }
+
+    }
+    .my /deep/ .van-cell {
+      padding: 19px 12px;
+    }
+    .my /deep/ .van-cell:not(:last-child)::after {
+      left: 12px;
+    }
+</style>

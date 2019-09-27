@@ -1,0 +1,376 @@
+<template>
+    <div class="record">
+        <section v-if="!loadingStatus">
+          <van-dropdown-menu>
+            <van-dropdown-item title="筛选" ref="item">
+              <div class="data-wrap">
+                <p class="title">时间筛选</p>
+                <div class="cont">
+                  <div class="field-wrap">
+                    <van-field
+                      v-model="startTime"
+                      type="text"
+                      placeholder="开始时间"
+                      @click="clickStartTime"
+                      readonly
+                      clearable
+                    />
+                    <div class="line">
+                      --
+                    </div>
+                    <van-field
+                      v-model="endTime"
+                      type="text"
+                      placeholder="结束时间"
+                      @click="clickEndTime"
+                      readonly
+                      clearable
+                    />
+                  </div>
+                  <div v-show="showDate" class="date">
+                    <van-datetime-picker
+                      v-model="currentDate"
+                      type="date"
+                      :show-toolbar='showToolbar'
+                      @change="getDateVal"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div class="btn-group-wrap">
+                <van-button class="cancle-btn" @click="onReset">重置</van-button>
+                <van-button class="confirm-btn" @click="onConfirm">确定</van-button>
+              </div>
+            </van-dropdown-item>
+          </van-dropdown-menu>
+          <div class="total">
+            共{{ totalRecord || 0 }}条
+          </div>
+          <div class="data-list">
+            <van-list
+              v-model="loading"
+              :finished="finished"
+              finished-text="没有更多了"
+              @load="onLoad"
+              :offset="offsetVal"
+              :immediate-check="checkStatus"
+            >
+              <div class="data-item" v-for="(item,index) in listData" :key="index">
+                <div class="left-img">
+                  <img src="../assets/images/coupon-icon.png" alt="" srcset="">
+                </div>
+                <div class="center-data">
+                  <div class="title">
+                    {{ item.title }}
+                  </div>
+                  <div class="sub-title">
+                    {{ item.category }}
+                  </div>
+                  <div class="date">
+                    {{ formatTime(item.useTime) }}
+                  </div>
+                </div>
+                <div class="right-price">
+                  <div class="text">售价:</div><div class="num">{{ item.salePrice }}</div>
+                </div>
+              </div>
+            </van-list>
+          </div>
+        </section>
+        <van-loading v-else size="24px" type="spinner" vertical style="padding-top:45%;">加载中...</van-loading>
+    </div>
+</template>
+
+<script>
+
+    import { Loading, Cell, CellGroup, DropdownMenu, DropdownItem, Field, Button, DatetimePicker, Icon, List} from 'vant'
+    import * as core from '../api/hexiao'
+    import { timeFormat } from '../common/js/util'
+
+    export default {
+        name: 'record',
+        data() {
+          return {
+            loadingStatus: true,
+            loading: false,
+            finished: false,
+            offsetVal: 1,
+            checkStatus: false,
+            currentDate: new Date(),
+            showDate: false,
+            showToolbar: false,
+            timeType: null,
+            startTime: null,
+            endTime: null,
+            listData: [],
+            totalRecord: null,
+            pageIndex: 1,
+            pageSize: 10,
+          }
+        },
+        watch: {
+          startSubTime(newVal,oldVal){
+            if(this.endSubTime){
+              if(newVal > this.endSubTime){
+                this.endSubTime = null
+                this.endTime = null
+              }
+            }
+          },
+          endSubTime(newVal,oldVal){
+            if(this.startSubTime){
+              if(newVal < this.startSubTime){
+                this.$toast('结束时间不能小于开始时间')
+                this.endSubTime = null
+                this.endTime = null
+              }
+            }else{
+              this.endSubTime = null
+              this.endTime = null
+              this.$toast('请先选择开始时间')
+            }
+          },
+        },
+        created() {
+          document.title = this.$route.meta.title;
+          this.getHexiaoList({pageIndex:this.pageIndex,pageSize: this.pageSize})
+        },
+        methods: {
+          onLoad() {
+            let data = {pageIndex:this.pageIndex,pageSize: this.pageSize}
+            if(this.startTime){
+              data.startTime = this.startTime
+            }
+            if(this.endTime){
+              data.endTime = this.endTime
+            }
+            this.getHexiaoList(data)
+          },
+          getHexiaoList(opts,isShow){
+            core.getHexiaoList(opts).then(res => {
+              //console.log(res)
+              if (res.code && res.code == '00') {
+                if(res.result.data && isShow){
+                  this.listData = []
+                  this.listData = this.listData.concat(res.result.data)
+                }else{
+                  this.listData = this.listData.concat(res.result.data)
+                }
+                this.totalRecord = res.result.totalRecord
+                this.loading = false
+                this.pageIndex = opts.pageIndex + 1
+                if(this.listData.length >= this.totalRecord){
+                  this.finished = true;
+                }
+                this.loadingStatus = false
+                if(isShow == 'close'){
+                  this.$refs.item.toggle();
+                  this.startTime = null
+                  this.endTime = null
+                  this.showDate = false
+                }
+              }else{
+                this.$toast(res.message)
+              }
+            }).catch(err => {
+              this.$toast("网络错误")
+            })
+          },
+          formatTime(val){
+            return timeFormat(val, 2)
+          },
+          clickStartTime(){
+            this.timeType = 'start'
+            this.showDate = true
+            this.startTime = null
+          },
+          clickEndTime(){
+            this.timeType = 'end'
+            this.showDate = true
+            this.endTime = null
+          },
+          getDateVal(ele){
+            let date = ele.getValues()
+            console.log(date)
+            if(this.timeType == 'start'){
+              this.startTime = timeFormat(new Date(date[0], date[1] - 1, date[2]).getTime())
+            }else{
+              this.endTime = timeFormat(new Date(date[0], date[1] - 1, date[2]).getTime())
+            }
+          },
+          onReset(){
+            this.startTime = null
+            this.endTime = null
+          },
+          onConfirm() {
+            let data = {pageIndex:1 ,pageSize: this.pageSize}
+            if(this.startTime){
+              data.startTime = this.startTime
+            }
+            if(this.endTime){
+              data.endTime = this.endTime
+            }
+            this.getHexiaoList(data, 'close')
+          },
+        },
+        components: {
+          [Loading.name]: Loading,
+          [Cell.name]: Cell,
+          [CellGroup.name]: CellGroup,
+          [DropdownMenu.name]: DropdownMenu,
+          [DropdownItem.name]: DropdownItem,
+          [Button.name]: Button,
+          [Field.name]: Field,
+          [Icon.name]: Icon,
+          [DatetimePicker.name]: DatetimePicker,
+          [List.name]: List
+        }
+    }
+</script>
+
+<style lang="less" scoped>
+    /*@import "../common/style/mixins";*/
+    .record {
+      width: 100%;
+      .data-wrap {
+        padding: 0 12px;
+        padding-top: 27px;
+        min-height: 30px;
+        .title {
+          margin: 0;
+          font-size:14px;
+          font-family:PingFang SC;
+          font-weight:400;
+          color:rgba(51,51,51,1);
+          margin-bottom: 12px;
+        }
+        .cont {
+          padding-bottom: 50px;
+        }
+        .field-wrap {
+          display: flex;
+          justify-content: flex-start;
+          align-items: center;
+          .van-field {
+            width:137px;
+            height:44px;
+            padding: 10px 9px;
+            border:1px solid rgba(199,199,199,1);
+            border-radius:4px;
+          }
+          .line {
+            color: rgba(199,199,199,1);
+            margin: 0 3px;
+          }
+        }
+        .date {
+          margin-top: 30px;
+        }
+      }
+      .btn-group-wrap {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        .van-button {
+          flex: 1;
+          height:44px;
+          background:rgba(203,230,255,1);
+          font-size:16px;
+          letter-spacing: 4px;
+          border: none;
+          border-radius: 0;
+        }
+        .cancle-btn {
+          color:rgba(24,144,255,1);
+        }
+        .confirm-btn {
+          background:rgba(24,144,255,1);
+          color:rgba(255,255,255,1);
+        }
+      }
+      .total {
+        width:100%;
+        height:28px;
+        padding: 0 12px;
+        box-sizing: border-box;
+        background:rgba(245,245,245,1);
+        font-size: 12px;
+        color:rgba(153,153,153,1);
+        line-height: 28px;
+        text-align: right;
+      }
+      .data-list {
+        .data-item {
+          padding: 17px 12px;
+          display: flex;
+          justify-content: flex-start;
+          align-items: flex-start;
+          position: relative;
+          &::after {
+            position: absolute;
+            box-sizing: border-box;
+            content: ' ';
+            pointer-events: none;
+            right: 0;
+            bottom: 0;
+            left: 12px;
+            border-bottom: 1px solid #ebedf0;
+          }
+          .left-img {
+            width: 35px;
+            height: 35px;
+            img {
+              width: 100%;
+              height: 100%;
+            }
+          }
+          .center-data {
+            width: 210px;
+            padding-left: 10px;
+            .title {
+              font-size:16px;
+              color:rgba(51,51,51,1);
+              overflow:hidden; //超出的文本隐藏
+              text-overflow:ellipsis; //溢出用省略号显示
+              white-space:nowrap; //溢出不换
+            }
+            .sub-title {
+              font-size:12px;
+              color:rgba(51,51,51,1);
+              margin: 10px 0;
+            }
+            .date {
+              font-size:12px;
+              color:rgba(153,153,153,1);
+            }
+          }
+          .right-price {
+            width: 120px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-end;
+
+            .text {
+              font-size:13px;
+              color:rgba(51,51,51,1);
+            }
+            .num {
+              margin-left: 5px;
+              font-size:22px;
+              color:rgba(51,51,51,1);
+            }
+          }
+        }
+      }
+    }
+    .record /deep/ .van-dropdown-menu{
+      height: 44px;
+    }
+    .record /deep/ .van-dropdown-menu__item {
+      justify-content: flex-start;
+      height: 44px;
+    }
+    .record /deep/ .van-field__control{
+      text-align: center;
+    }
+</style>

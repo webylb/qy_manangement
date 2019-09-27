@@ -1,0 +1,363 @@
+<template>
+    <div class="record">
+        <section>
+          <van-dropdown-menu>
+            <van-dropdown-item title="筛选" ref="item">
+              <div class="data-wrap">
+                <p class="title">时间筛选</p>
+                <div class="cont">
+                  <div class="field-wrap">
+                    <van-field
+                      v-model="stareTime"
+                      type="text"
+                      placeholder="开始时间"
+                      @click="clickStartTime"
+                      readonly
+                      clearable
+                    />
+                    <div class="line">
+                      --
+                    </div>
+                    <van-field
+                      v-model="endTime"
+                      type="text"
+                      placeholder="结束时间"
+                      @click="clickEndTime"
+                      readonly
+                      clearable
+                    />
+                  </div>
+                  <div v-show="showDate" class="date">
+                    <van-datetime-picker
+                      v-model="currentDate"
+                      type="date"
+                      :show-toolbar='showToolbar'
+                      @change="getDateVal"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div class="data-wrap btn-wrap">
+                <p class="title">选择审核状态</p>
+                <div class="cont">
+                  <van-button class="btn-item" :class="[item.id == activeIndex ? 'active-btn': '']" @click="changeIndex(item.id)" v-for="(item,index) in buttonList" :key="index">
+                    {{ item.text }}
+                    <img v-if="item.id == activeIndex" src="../assets/images/active.png" alt="">
+                  </van-button>
+                </div>
+              </div>
+              <div class="btn-group-wrap">
+                <van-button class="cancle-btn" @click="onReset">重置</van-button>
+                <van-button class="confirm-btn" @click="onConfirm">确定</van-button>
+              </div>
+            </van-dropdown-item>
+          </van-dropdown-menu>
+          <div class="total">
+            共4条
+          </div>
+          <div class="data-list">
+            <div class="data-item">
+              <div class="left-img">
+                <img src="../assets/images/coupon-icon.png" alt="" srcset="">
+              </div>
+              <div class="center-data">
+                <div class="title">
+                  50元代金券
+                </div>
+                <div class="sub-title">
+                  抵价券
+                </div>
+                <div class="date">
+                  2019-09-25  12:00:00
+                </div>
+              </div>
+              <div class="right-price">
+                <div class="text">售价:</div><div class="num">5.00</div>
+              </div>
+            </div>
+          </div>
+        </section>
+    </div>
+</template>
+
+<script>
+
+    import { Cell, CellGroup, DropdownMenu, DropdownItem, Field, Button, DatetimePicker, Icon } from 'vant'
+    import { timeFormat } from '../common/js/util'
+
+    export default {
+        name: 'record',
+        data() {
+          return {
+            loading: false,
+            finished: false,
+            currentDate: new Date(),
+            showDate: false,
+            showToolbar: false,
+            timeType: null,
+            stareTime: null,
+            endTime: null,
+            startSubTime: null,
+            endSubTime: null,
+            activeIndex: 0,
+            buttonList: [
+              {
+                text: '已通过',
+                id: 0
+              },
+              {
+                text: '待审核',
+                id: 1
+              },
+              {
+                text: '已驳回',
+                id: 2
+              }
+            ]
+          }
+        },
+        watch: {
+          startSubTime(newVal,oldVal){
+            if(this.endSubTime){
+              if(newVal > this.endSubTime){
+                this.endSubTime = null
+                this.endTime = null
+              }
+            }
+          },
+          endSubTime(newVal,oldVal){
+            if(this.startSubTime){
+              if(newVal < this.startSubTime){
+                this.$toast('结束时间不能小于开始时间')
+                this.endSubTime = null
+                this.endTime = null
+              }
+            }else{
+              this.endSubTime = null
+              this.endTime = null
+              this.$toast('请先选择开始时间')
+            }
+          },
+        },
+        created() {
+
+        },
+        methods: {
+          clickStartTime(){
+            this.timeType = 'start'
+            this.showDate = true
+            this.startSubTime = null
+            this.stareTime = null
+          },
+          clickEndTime(){
+            this.timeType = 'end'
+            this.showDate = true
+            this.endSubTime = null
+            this.endTime = null
+          },
+          getDateVal(ele){
+            let date = ele.getValues()
+            if(this.timeType == 'start'){
+              this.startSubTime = new Date(date[0], date[1] - 1, date[2]).getTime()
+              this.stareTime = timeFormat(new Date(date[0], date[1] - 1, date[2]).getTime())
+            }else{
+              this.endSubTime = new Date(date[0], date[1] - 1, date[2]).getTime()
+              this.endTime = timeFormat(new Date(date[0], date[1] - 1, date[2]).getTime())
+            }
+          },
+          onReset(){
+            this.startSubTime = null
+            this.stareTime = null
+            this.endSubTime = null
+            this.endTime = null
+          },
+          onConfirm() {
+            this.$refs.item.toggle();
+          },
+          changeIndex(id){
+            this.activeIndex = id
+          }
+        },
+        components: {
+          [Cell.name]: Cell,
+          [CellGroup.name]: CellGroup,
+          [DropdownMenu.name]: DropdownMenu,
+          [DropdownItem.name]: DropdownItem,
+          [Button.name]: Button,
+          [Field.name]: Field,
+          [Icon.name]: Icon,
+          [DatetimePicker.name]: DatetimePicker
+        }
+    }
+</script>
+
+<style lang="less" scoped>
+    /*@import "../common/style/mixins";*/
+    .record {
+      width: 100%;
+      .data-wrap {
+        padding: 0 12px;
+        padding-top: 27px;
+        min-height: 30px;
+        .title {
+          margin: 0;
+          font-size:14px;
+          font-family:PingFang SC;
+          font-weight:400;
+          color:rgba(51,51,51,1);
+          margin-bottom: 12px;
+        }
+        .cont {
+          padding-bottom: 50px;
+        }
+        .field-wrap {
+          display: flex;
+          justify-content: flex-start;
+          align-items: center;
+          .van-field {
+            width:137px;
+            height:44px;
+            padding: 10px 9px;
+            border:1px solid rgba(199,199,199,1);
+            border-radius:4px;
+          }
+          .line {
+            color: rgba(199,199,199,1);
+            margin: 0 3px;
+          }
+        }
+        .date {
+          margin-top: 30px;
+        }
+      }
+      .btn-wrap {
+        padding-top: 0;
+        .btn-item {
+          width:68px;
+          height:28px;
+          background:rgba(238,238,238,1);
+          border-radius:2px;
+          margin-right: 16px;
+          padding: 0;
+          line-height: 28px;
+        }
+        .active-btn {
+          position: relative;
+          background:rgba(203,230,255,1);
+          color:rgba(24,144,255,1);
+        }
+        img {
+          position: absolute;
+          right: 0;
+          bottom: 0;
+          width: 15px;
+          height: 15px;
+        }
+      }
+      .btn-group-wrap {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        .van-button {
+          flex: 1;
+          height:44px;
+          background:rgba(203,230,255,1);
+          font-size:16px;
+          letter-spacing: 4px;
+          border: none;
+          border-radius: 0;
+        }
+        .cancle-btn {
+          color:rgba(24,144,255,1);
+        }
+        .confirm-btn {
+          background:rgba(24,144,255,1);
+          color:rgba(255,255,255,1);
+        }
+      }
+      .total {
+        width:100%;
+        height:28px;
+        padding: 0 12px;
+        box-sizing: border-box;
+        background:rgba(245,245,245,1);
+        font-size: 12px;
+        color:rgba(153,153,153,1);
+        line-height: 28px;
+        text-align: right;
+      }
+      .data-list {
+        .data-item {
+          padding: 17px 12px;
+          display: flex;
+          justify-content: flex-start;
+          align-items: flex-start;
+          position: relative;
+          &::after {
+            position: absolute;
+            box-sizing: border-box;
+            content: ' ';
+            pointer-events: none;
+            right: 0;
+            bottom: 0;
+            left: 12px;
+            border-bottom: 1px solid #ebedf0;
+          }
+          .left-img {
+            width: 35px;
+            height: 35px;
+            img {
+              width: 100%;
+              height: 100%;
+            }
+          }
+          .center-data {
+            width: 210px;
+            padding-left: 10px;
+            .title {
+              font-size:16px;
+              color:rgba(51,51,51,1);
+              overflow:hidden; //超出的文本隐藏
+              text-overflow:ellipsis; //溢出用省略号显示
+              white-space:nowrap; //溢出不换
+            }
+            .sub-title {
+              font-size:12px;
+              color:rgba(51,51,51,1);
+              margin: 10px 0;
+            }
+            .date {
+              font-size:12px;
+              color:rgba(153,153,153,1);
+            }
+          }
+          .right-price {
+            width: 120px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-end;
+
+            .text {
+              font-size:13px;
+              color:rgba(51,51,51,1);
+            }
+            .num {
+              margin-left: 5px;
+              font-size:22px;
+              color:rgba(51,51,51,1);
+            }
+          }
+        }
+      }
+    }
+    .record /deep/ .van-dropdown-menu{
+      height: 44px;
+    }
+    .record /deep/ .van-dropdown-menu__item {
+      justify-content: flex-start;
+      height: 44px;
+    }
+    .record /deep/ .van-field__control{
+      text-align: center;
+    }
+</style>

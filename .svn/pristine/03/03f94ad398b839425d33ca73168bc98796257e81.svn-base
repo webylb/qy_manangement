@@ -1,0 +1,50 @@
+import Vue from 'vue'
+import App from './App.vue'
+import router from './router'
+import "amfe-flexible";
+import 'vant/lib/index.css';
+import 'vant/lib/icon/local.css';
+import '@/common/style/font/iconfont.less'
+import vueg from 'vueg'
+
+const Options = {
+    duration: .2,
+    shadow: false,
+    enter: 'fadeIn',
+    leave: 'fadeOut'
+};
+
+import {Toast, Dialog} from 'vant';
+
+// import VConsole from 'vconsole'
+// Vue.use(new VConsole())
+
+// if(process.env.NODE_ENV === 'development'){
+//     window.infoData = {
+//         merchantId: 281,
+//         gameId: 1
+//     }
+//     document.cookie = "QY_COOKIE_PASSPORT_NAME="+"\"sessionId=6499dedf48998732b83d8c0c955e2c59&userId=101\""
+// }
+
+Vue.use(vueg, router, Options);// 传入实例化后的router，和插件的全局配置
+Vue.use(Toast);
+Vue.use(Dialog);
+Vue.config.productionTip = false;
+
+//添加百度统计
+router.beforeEach((to, from, next) => {
+    if (to.fullPath) {
+      try {
+        window._hmt && window._hmt.push(['_trackPageview', '/f/g/' + window.infoData.merchantId + '.html' + to.fullPath]);
+      } catch (e) {
+        console.log(e)
+      }
+    }
+    next();
+})
+
+export default new Vue({
+    router,
+    render: h => h(App)
+}).$mount('#app');

@@ -1,0 +1,384 @@
+<template>
+    <div class="create-content" ref="createContent">
+        <section class="create-form" v-show="!loadingStatus">
+          <div class="input-group-wrap">
+            <div class="input-item">
+              <div class="left-label">
+                <p>券码名称:</p>
+              </div>
+              <van-field
+                v-model="couponName"
+                type="text"
+                placeholder="请输入券码名称"
+                disabled
+              />
+            </div>
+            <div class="input-item select-item">
+              <div class="left-label">
+                <p>券码类型:</p>
+              </div>
+              <select
+                id="coupon-type"
+                class="coupon-type"
+                v-model="couponType"
+                disabled
+                >
+                <option value="满减券">满减券</option>
+                <option value="抵价券">抵价券</option>
+                <option value="商品券">商品券</option>
+              </select>
+              <van-icon name="arrow-down" />
+            </div>
+            <div class="input-item">
+              <div class="left-label">
+                <p>券码售价:</p>
+              </div>
+              <van-field class="right-field"
+                v-model="couponPrice"
+                type="text"
+                placeholder="0"
+                disabled
+              />
+              <div class="right-lable">
+                元
+              </div>
+            </div>
+            <div class="input-item">
+              <div class="left-label">
+                <p>券码张数:</p>
+              </div>
+              <van-field class="right-field"
+                v-model="couponNum"
+                type="text"
+                placeholder="0"
+                disabled
+              />
+              <div class="right-lable">
+                张
+              </div>
+            </div>
+            <div class="input-item date-input-item">
+              <div class="left-label">
+                <p>使用期限:</p>
+              </div>
+              <van-field
+                v-model="stareTime"
+                type="text"
+                placeholder="开始时间"
+                disabled
+              />
+              <div class="line">
+                --
+              </div>
+              <van-field
+                v-model="endTime"
+                type="text"
+                placeholder="结束时间"
+                disabled
+              />
+            </div>
+            <div class="input-item upload-item">
+              <div class="left-label">
+                <p>上传图片:</p>
+                <span class="sub-title">(最多3张)</span>
+              </div>
+              <van-uploader
+                v-model="fileList"
+                multiple
+                disabled
+                :max-count="3"
+              />
+            </div>
+            <div class="input-item item-textarea">
+              <div class="left-label">
+                <p>使用规则:</p>
+              </div>
+              <van-field
+                v-model="couponText"
+                type="textarea"
+                placeholder="请输入券码使用规则"
+                disabled
+              />
+            </div>
+          </div>
+          <div class="btn-group-wrap">
+            <van-button class="sub" @click="subInfo">确认</van-button>
+          </div>
+        </section>
+        <div class="customer-service" v-show="!loadingStatus">
+          客服电话: <a href="tel:4006680091">4006680091</a>
+        </div>
+        <van-loading v-show="loadingStatus" size="24px" type="spinner" vertical style="padding-top:45%;">加载中...</van-loading>
+    </div>
+</template>
+
+<script>
+    import * as core from '../api/home'
+    import { Loading, CellGroup, Field, Button, DatetimePicker, Icon, Uploader, Popup  } from 'vant'
+    import { timeFormat } from '../common/js/util'
+
+    export default {
+      name: 'createContentPrev',
+      data() {
+        return {
+          loadingStatus: true,
+          loading: false,
+          finished: false,
+          couponName: '',
+          couponType: '',
+          couponPrice: '',
+          couponNum: '',
+          couponText: '',
+          fileList: [],
+          stareTime: null,
+          endTime: null,
+        }
+      },
+      components: {
+        [Loading.name]: Loading,
+        [Field.name]: Field,
+        [CellGroup.name]: CellGroup,
+        [Button.name]: Button,
+        [Icon.name]: Icon,
+        [DatetimePicker.name]: DatetimePicker,
+        [Uploader.name]: Uploader,
+        [Popup.name]: Popup
+      },
+      created() {
+        document.title = this.$route.meta.title;
+        if(this.$route.query.batchId){
+          this.getPagerItemDetail({batchId: this.batchId})
+        }else{
+          this.$toast('券码批次ID不存在')
+          this.$router.go(-1)
+        }
+      },
+      methods: {
+        getPagerItemDetail(opts){
+          core.getPagerInfo(opts).then(res => {
+            console.log(res)
+            if (res.code && res.code == '00') {
+              this.loadingStatus = false
+              let data = res.result.data[0]
+              this.couponName = data.title
+              this.couponType = data.category
+              this.couponPrice = data.salePrice
+              this.couponNum = data.batchCount
+              this.couponText = data.rule
+              let arr = data.coverImgs.split(',')
+              arr.forEach((item,index) => {
+                this.fileList.push({url: item})
+              })
+              this.stareTime = timeFormat(data.startTime)
+              this.endTime = timeFormat(data.endTime)
+            }else{
+              this.loadingStatus = false
+              this.$toast(res.message)
+            }
+          }).catch(err => {
+            this.loadingStatus = false
+            this.$toast("网络错误")
+          })
+        },
+        subInfo(){
+          this.$router.go(-1)
+        }
+      }
+    }
+</script>
+
+<style lang="less" scoped>
+    /*@import "../common/style/mixins";*/
+    .create-content {
+      width: 100%;
+      box-sizing: border-box;
+      position: relative;
+      padding-bottom: 20px;
+      .create-form {
+        padding-top: 16px;
+        .input-group-wrap {
+          .input-item {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 44px;
+            margin: 0 12px;
+            margin-bottom: 12px;
+            position: relative;
+            &:last-child {
+              margin-bottom: 0
+            }
+            .left-label {
+              width: 70px;
+              text-align: center;
+              margin-right: 20px;
+              display: flex;
+              flex-flow: column;
+              p {
+                margin: 0;
+                font-size:16px;
+                line-height:24px;
+              }
+              .sub-title {
+                font-size:13px;
+                color:rgba(153,153,153,1);
+              }
+            }
+            .van-field {
+              padding: 10px 6px;
+              width:263px;
+              height:44px;
+              border:1px solid rgba(199,199,199,1);
+              border-radius:4px;
+              flex: 1;
+              font-size:15px;
+              color:rgba(51,51,51,1);
+              background-color: rgba(247,247,247,1);
+            }
+            .right-field {
+              padding-right: 40px;
+            }
+            .right-lable {
+              position: absolute;
+              top: 50%;
+              right: 15px;
+              transform: translateY(-50%);
+              color:rgba(51,51,51,1);
+              font-size: 14px;
+            }
+          }
+          .select-item {
+            position: relative;
+            .coupon-type {
+              outline:none;
+              -webkit-appearance: none;
+              padding: 10px 9px;
+              width:263px;
+              height:44px;
+              border:1px solid rgba(199,199,199,1);
+              border-radius:4px;
+              flex: 1;
+              font-size:15px;
+              color:rgba(51,51,51,1);
+              background: #fff;
+              &:focus {
+                background-color:transparent;
+              }
+            }
+            .van-icon {
+              display: block;
+              position: absolute;
+              top: 50%;
+              right: 14px;
+              transform: translateY(-50%);
+              color: rgba(194,194,194,1);
+              font-size: 14px;
+            }
+          }
+          .date-input-item {
+            .van-field {
+              width:120px;
+            }
+            .line {
+              color: rgba(199,199,199,1);
+              margin: 0 3px;
+            }
+          }
+          .upload-item {
+            min-height: 120px;
+            height: auto;
+            align-items: flex-start;
+            .van-uploader {
+              flex: 1;
+            }
+          }
+          .item-textarea {
+            min-height: 120px;
+            height: auto;
+            align-items: flex-start;
+            .van-field {
+              width:263px;
+              height:128px;
+            }
+          }
+        }
+        .btn-group-wrap {
+          margin-top: 60px;
+          text-align: center;
+          .van-button {
+            width:351px;
+            height:44px;
+            background:rgba(24,144,255,1);
+            border-radius:22px;
+            border: none;
+            font-size:18px;
+          }
+          .sub {
+            letter-spacing: 6px;
+            color:rgba(255,255,255,1);
+          }
+        }
+      }
+      .customer-service {
+        margin: 0 auto;
+        margin-top: 60px;
+        width: 150px;
+        font-size: 12px;
+        letter-spacing: 0rem;
+        color: #999999;
+        text-align: center;
+        position: relative;
+        a {
+          color: #1890FF;
+        }
+        &::before {
+          content: '';
+          position: absolute;
+          left: -45px;
+          top: 50%;
+          transform: translateY(-50%) scaleY(0.5);
+          height: 1px;
+          background: #999999;
+          width: 40px;
+        }
+        &::after {
+          content: '';
+          position: absolute;
+          right: -45px;
+          top: 50%;
+          transform: translateY(-50%) scaleY(0.5);
+          height: 1px;
+          background: #999999;
+          width: 40px;
+        }
+      }
+    }
+    .create-content /deep/ .van-field__control:disabled {
+      color:rgba(51,51,51,1);
+    }
+    .date-input-item /deep/ .van-field__control{
+      text-align: center;
+    }
+    .upload-item /deep/ .van-uploader__wrapper {
+      justify-content: space-between;
+    }
+    .upload-item /deep/ .van-uploader__upload {
+      width: 120px;
+      height: 120px;
+      background-color: rgba(247,247,247,1);
+    }
+    .upload-item /deep/ .van-uploader__preview-image {
+      width: 120px;
+      height: 120px;
+    }
+    .upload-item /deep/ .van-uploader__preview {
+      margin-bottom: 10px;
+    }
+    .item-textarea /deep/ .van-field--min-height .van-field__control {
+      height: 128px;
+    }
+    .create-content .create-form .input-group-wrap .select-item .coupon-type:disabled {
+      color: rgba(51,51,51,1);
+      background-color: rgba(247,247,247,1);
+    }
+</style>

@@ -1,0 +1,21 @@
+const domain= process.env.NODE_ENV==='production' ? '' : '/api'
+
+const CONFIG = {
+    API: {
+      'REGISTER': domain + '/cash/api/register',
+      'LOGIN': domain + '/cash/api/login',
+      'LOGINOUT': domain + '/cash/api/loginOut',
+      'GET_PAGER': domain + '/cash/api/batch/getPager', //获取券码
+      'GET_PAGER_DETAIL': domain + '/cash/api/batch/getDetail', //获取券码详情
+      'CREATE_PAGER': domain + '/cash/api/batch/create', //券码生成
+      'UPLOAD_IMG': domain + '/cash/api/upload', //图片上传
+
+      'GET_HEXIAO_LIST': domain + '/cash/api/use/ticket/list' ,//获取核销列表
+      'GET_TICKET_DETAIL': domain + '/cash/api/ticket/detail', //获取卡密详情
+      'GET_WEIXIN_DATA': domain + '/cash/api/weixin/jsonp/post',// 获取微信参数
+      'GET_USER_INFO': domain + '/cash/api/find/store/detail', //获取门店信息
+      'CHANGE_PASSWORD': domain + '/cash/api/update/password', //更改密码
+    }
+};
+
+export default CONFIG

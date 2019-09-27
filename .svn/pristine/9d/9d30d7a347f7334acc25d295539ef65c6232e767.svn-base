@@ -1,0 +1,20 @@
+const domain= process.env.NODE_ENV==='production' ? '' : '/api'
+
+const CONFIG = {
+    API: {
+        'GTE_COLLAGE_DETAIL': domain + '/front/find/create/collage',//获取拼团详情
+        'CREATE_COLLAGE': '/front/create/collage', //从详情页创建拼团
+        'JOIN_COLLAGE': domain + '/front/join/collage',//获取拼团详情
+        'GET_SHARE_PIC': domain + '/share/picture', //获取分享海报
+        'UPDATE_TIPS': domain + '/update/tips', //更新提示状态
+        'SHOW_GIFTS': domain + '/front/find/collage/goods/code',
+    },
+    HOMEAPI: {
+        'IS_LOGIN': domain + '/front/game/isLogin', // 判断是否登录
+        'GET_ACTIVE_INFO': domain + '/front/game/detail', // 获取活动信息
+        'CREATE_GROUP': domain + '/front/create/collage', // 创建拼团
+        'GROUP_LIST': domain + '/front/collage/list', // 获取未拼团列表
+    }
+};
+
+export default CONFIG

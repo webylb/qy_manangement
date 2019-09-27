@@ -1,0 +1,31 @@
+import axios from '../common/js/http'
+import CONFIG from './config'
+import qs from 'qs'
+import {requestDispose} from '../common/js/util'
+
+/**
+ * 注册
+ * */
+export function subRegister(opts) {
+    return axios.post(CONFIG.API.REGISTER, qs.stringify({
+      name: opts.name,
+      contact: opts.contact,
+      mobile: opts.mobile,
+      password: opts.password
+    }), {headers: {showLoading: true}}).then(res => {
+        return requestDispose(res, true, true)
+    })
+}
+
+
+/**
+ * 登录
+ * */
+export function subLogin(opts) {
+  return axios.post(CONFIG.API.LOGIN, qs.stringify({
+    mobile: opts.mobile,
+    password: opts.password
+  }), {headers: {showLoading: true}}).then(res => {
+      return requestDispose(res, true, true)
+  })
+}
