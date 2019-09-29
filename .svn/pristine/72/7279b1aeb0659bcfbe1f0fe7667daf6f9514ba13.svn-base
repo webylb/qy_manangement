@@ -1,0 +1,53 @@
+import axios from '../common/js/http'
+import CONFIG from './config'
+import qs from 'qs'
+import {requestDispose} from '../common/js/util'
+
+/**
+ * 获取核销列表
+ * */
+export function getHexiaoList(opts) {
+    return axios.post(CONFIG.API.GET_HEXIAO_LIST, qs.stringify({
+      startTime: opts.startTime || '',
+      endTime: opts.endTime || '',
+      pageSize: opts.pageSize || 1,
+      pageIndex: opts.pageIndex || 10
+    }), {headers: {showLoading: false}}).then(res => {
+      return requestDispose(res)
+    })
+}
+
+/**
+ * 获取卡密详情
+ * */
+export function getTicketDetail(opts) {
+  return axios.post(CONFIG.API.GET_TICKET_DETAIL, qs.stringify({
+    cardNo: opts.cardNo
+  }), {headers: {showLoading: false}}).then(res => {
+    return requestDispose(res, true, true)
+  })
+}
+
+
+/**
+ * hexiao
+ * */
+export function toHeXiao(opts) {
+  return axios.post(CONFIG.API.TICKET_HEXIAO, qs.stringify({
+    cardNo: opts.cardNo
+  }), {headers: {showLoading: false}}).then(res => {
+    return requestDispose(res)
+  })
+}
+
+/**
+ * 获取weixindata
+ * */
+export function getWXData(opts) {
+  return axios.post(CONFIG.API.GET_WEIXIN_DATA, qs.stringify({
+    url: opts.url,
+    d: (new Date().getTime() + Math.floor(Math.random() * 100))
+  }), {headers: {showLoading: false}}).then(res => {
+    return requestDispose(res)
+  })
+}

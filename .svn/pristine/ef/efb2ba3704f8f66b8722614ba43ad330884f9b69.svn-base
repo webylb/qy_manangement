@@ -1,0 +1,511 @@
+<template>
+    <div class="create-content" ref="createContent">
+        <section class="create-form">
+          <div class="input-group-wrap">
+            <div class="input-item">
+              <div class="left-label">
+                <p>券码名称:</p>
+              </div>
+              <van-field class="van-hairline--surround"
+                v-model="couponName"
+                type="text"
+                placeholder="请输入券码名称"
+                clearable
+              />
+            </div>
+            <div class="input-item select-item">
+              <div class="left-label">
+                <p>券码类型:</p>
+              </div>
+              <div class="van-hairline--surround coupon-type-wrap">
+                <select class="coupon-type"
+                  id="coupon-type"
+                  v-model="couponType"
+                  >
+                  <option value="满减券">满减券</option>
+                  <option value="抵价券">抵价券</option>
+                  <option value="商品券">商品券</option>
+                </select>
+              </div>
+              <van-icon name="arrow-down" />
+            </div>
+            <div class="input-item">
+              <div class="left-label">
+                <p>券码售价:</p>
+              </div>
+              <van-field class="right-field van-hairline--surround"
+                v-model="couponPrice"
+                type="text"
+                placeholder="0"
+                clearable
+              />
+              <div class="right-lable">
+                元
+              </div>
+            </div>
+            <div class="input-item">
+              <div class="left-label">
+                <p>券码张数:</p>
+              </div>
+              <van-field class="right-field van-hairline--surround"
+                v-model="couponNum"
+                type="text"
+                placeholder="0"
+                clearable
+              />
+              <div class="right-lable">
+                张
+              </div>
+            </div>
+            <div class="input-item date-input-item">
+              <div class="left-label">
+                <p>使用期限:</p>
+              </div>
+              <van-field class="van-hairline--surround"
+                v-model="startTime"
+                type="text"
+                placeholder="开始时间"
+                @click="clickStartTime"
+                readonly
+                clearable
+              />
+              <div class="line">
+                --
+              </div>
+              <van-field class="van-hairline--surround"
+                v-model="endTime"
+                type="text"
+                placeholder="结束时间"
+                @click="clickEndTime"
+                readonly
+                clearable
+              />
+            </div>
+            <div class="input-item upload-item">
+              <div class="left-label">
+                <p>上传图片:</p>
+                <span class="sub-title">(最多3张)</span>
+              </div>
+              <van-uploader
+                v-model="fileList"
+                multiple
+                :before-read="beforeRead"
+                :after-read="afterRead"
+                :before-delete="beforeDelete"
+                @delete="deleteImg"
+                :max-count="3"
+              />
+            </div>
+            <div class="input-item item-textarea">
+              <div class="left-label">
+                <p>使用规则:</p>
+              </div>
+              <van-field class="van-hairline--surround"
+                v-model="couponText"
+                type="textarea"
+                placeholder="请输入券码使用规则"
+              />
+            </div>
+          </div>
+          <div class="btn-group-wrap">
+            <van-button class="sub" @click="subInfo">提交</van-button>
+          </div>
+        </section>
+        <div class="customer-service">
+          客服电话: <a href="tel:4006680091">4006680091</a>
+        </div>
+        <van-popup
+          v-model="showDate"
+          position="bottom"
+        >
+          <van-datetime-picker
+            v-model="currentDate"
+            type="date"
+            :min-date="minDate"
+            @cancel="cancelTime"
+            @confirm="confirmTime"
+          />
+        </van-popup>
+    </div>
+</template>
+
+<script>
+    import * as core from '../api/home'
+    import { CellGroup, Field, Button, DatetimePicker, Icon, Uploader, Popup  } from 'vant'
+    import { timeFormat } from '../common/js/util'
+
+    export default {
+      name: 'createContent',
+      data() {
+        return {
+          loading: false,
+          finished: false,
+          couponName: '',
+          couponType: '',
+          couponPrice: '',
+          couponNum: '',
+          couponText: '',
+          imgList: [],
+          fileList: [],
+          currentDate: new Date(),
+          minDate: new Date(),
+          showDate: false,
+          timeType: null,
+          startTime: null,
+          endTime: null
+        }
+      },
+      components: {
+        [Field.name]: Field,
+        [CellGroup.name]: CellGroup,
+        [Button.name]: Button,
+        [Icon.name]: Icon,
+        [DatetimePicker.name]: DatetimePicker,
+        [Uploader.name]: Uploader,
+        [Popup.name]: Popup
+      },
+      watch: {
+        startSubTime(newVal,oldVal){
+          if(this.endSubTime){
+            if(newVal > this.endSubTime){
+              this.endSubTime = null
+              this.endTime = null
+            }
+          }
+        },
+        endSubTime(newVal,oldVal){
+          if(this.startSubTime){
+            if(newVal < this.startSubTime){
+              this.$toast('结束时间不能小于开始时间')
+              this.endSubTime = null
+              this.endTime = null
+            }
+          }else{
+            this.endSubTime = null
+            this.endTime = null
+            this.$toast('请先选择开始时间')
+          }
+        },
+      },
+      created() {
+        document.title = this.$route.meta.title;
+      },
+      methods: {
+        subInfo(){
+          let data = {}
+          if(!this.couponName){
+            this.$toast("请输入券码名称")
+            return;
+          }
+          data.title = this.couponName
+          if(!this.couponType){
+            this.$toast("请选择券码类型")
+            return;
+          }
+          data.category = this.couponType
+          if(!this.couponPrice){
+            this.$toast("请输入券码售价")
+            return;
+          }
+          data.salePrice = this.couponPrice
+          if(!this.couponNum){
+            this.$toast("请输入券码数量")
+            return;
+          }
+          data.batchCount = this.couponNum
+          if(!this.startTime){
+            this.$toast("请输入有效开始期限")
+            return;
+          }
+          data.startTime = this.startTime
+          if(!this.endTime){
+            this.$toast("请输入有效截止期限")
+            return;
+          }
+          data.endTime = this.endTime
+          if(!this.fileList){
+            this.$toast("请上传券码图片")
+            return;
+          }
+          let picStr = []
+          for (var i = 0; i < this.fileList.length; i++) {
+              picStr.push(this.fileList[i].url)
+          }
+          data.coverImgs = picStr.join(',')
+          if(!this.couponText){
+            this.$toast("请输入使用规则")
+            return;
+          }
+          data.rule = this.couponText
+          core.createPager(data).then(res => {
+            //console.log(res)
+            if (res.code && res.code == '00') {
+              this.$toast(res.message)
+              this.$router.push('/')
+            }else{
+              this.$toast(res.message)
+            }
+          }).catch(err => {
+            this.loadingStatus = false
+            this.$toast("网络错误")
+          })
+        },
+        clickStartTime(){
+          this.timeType = 'start'
+          this.showDate = true
+        },
+        clickEndTime(){
+          this.timeType = 'end'
+          this.showDate = true
+        },
+        cancelTime(){
+          this.showDate = false
+        },
+        confirmTime(res){
+          this.showDate = false
+          if(this.timeType == 'start'){
+            this.startTime = timeFormat(res.getTime())
+          }else{
+            this.endTime = timeFormat(res.getTime())
+          }
+          //console.log(res)
+        },
+        toRegister(){
+          this.$router.push('/register')
+        },
+        beforeRead(file){
+          console.log(file)
+          let formData = new FormData();
+          formData.append('uploadFile', file, file.name);
+          core.uplaodImg(formData).then(res => {
+              if (res && res.code == '00') {
+                this.fileList.push({url: res.result, isImage: true })
+              }
+          })
+          return false;
+        },
+        afterRead(){
+
+        },
+        beforeDelete(file){
+          console.log(file)
+          this.fileList.forEach((item,index) => {
+            if(item.url == file.url){
+              this.fileList.splice(index, 1)
+            }
+          })
+        },
+        deleteImg(file){
+          console.log(file)
+        }
+      }
+    }
+</script>
+
+<style lang="less" scoped>
+    /*@import "../common/style/mixins";*/
+    .create-content {
+      width: 100%;
+      box-sizing: border-box;
+      position: relative;
+      padding-bottom: 20px;
+      .create-form {
+        padding-top: 16px;
+        .input-group-wrap {
+          .input-item {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 44px;
+            margin: 0 12px;
+            margin-bottom: 12px;
+            position: relative;
+            &:last-child {
+              margin-bottom: 0
+            }
+            .left-label {
+              width: 70px;
+              text-align: center;
+              margin-right: 20px;
+              display: flex;
+              flex-flow: column;
+              p {
+                margin: 0;
+                font-size:16px;
+                line-height:24px;
+              }
+              .sub-title {
+                font-size:13px;
+                color:rgba(153,153,153,1);
+              }
+            }
+            .van-field {
+              padding: 10px 9px;
+              width:263px;
+              height:44px;
+              border-color: rgba(199,199,199,1);
+              border-radius:4px;
+              flex: 1;
+              font-size:15px;
+              color:rgba(51,51,51,1);
+              border-radius: 4px;
+              box-sizing: border-box;
+            }
+            .right-field {
+              padding-right: 40px;
+            }
+            .right-lable {
+              position: absolute;
+              top: 50%;
+              right: 15px;
+              transform: translateY(-50%);
+              color:rgba(51,51,51,1);
+              font-size: 14px;
+            }
+          }
+          .select-item {
+            position: relative;
+            .coupon-type {
+              position: absolute;
+              top: 0;
+              outline:none;
+              -webkit-appearance: none;
+              padding: 10px 9px;
+              width:100%;
+              height:100%;
+              flex: 1;
+              font-size:15px;
+              color:rgba(51,51,51,1);
+              background: #fff;
+              border: none;
+              &:focus {
+                background-color:transparent;
+              }
+            }
+            .coupon-type-wrap {
+              width:263px;
+              height:44px;
+              border-radius:4px;
+              flex: 1;
+              position: relative;
+            }
+            .van-icon {
+              display: block;
+              position: absolute;
+              top: 50%;
+              right: 14px;
+              transform: translateY(-50%);
+              color: rgba(194,194,194,1);
+              font-size: 14px;
+            }
+          }
+          .date-input-item {
+            .van-field {
+              width:120px;
+            }
+            .line {
+              color: rgba(199,199,199,1);
+              margin: 0 3px;
+              transform: scale(0.5)
+            }
+          }
+          .upload-item {
+            min-height: 120px;
+            height: auto;
+            align-items: flex-start;
+            .van-uploader {
+              flex: 1;
+            }
+          }
+          .item-textarea {
+            min-height: 120px;
+            height: auto;
+            align-items: flex-start;
+            .van-field {
+              width:263px;
+              height:128px;
+            }
+          }
+        }
+        .btn-group-wrap {
+          margin-top: 60px;
+          text-align: center;
+          .van-button {
+            width:351px;
+            height:44px;
+            background:rgba(24,144,255,1);
+            border-radius:22px;
+            border: none;
+            font-size:18px;
+          }
+          .sub {
+            letter-spacing: 6px;
+            color:rgba(255,255,255,1);
+          }
+        }
+      }
+      .customer-service {
+        margin: 0 auto;
+        margin-top: 60px;
+        width: 150px;
+        font-size: 12px;
+        letter-spacing: 0rem;
+        color: #999999;
+        text-align: center;
+        position: relative;
+        a {
+          color: #1890FF;
+        }
+        &::before {
+          content: '';
+          position: absolute;
+          left: -45px;
+          top: 50%;
+          transform: translateY(-50%) scaleY(0.5);
+          height: 1px;
+          background: #999999;
+          width: 40px;
+        }
+        &::after {
+          content: '';
+          position: absolute;
+          right: -45px;
+          top: 50%;
+          transform: translateY(-50%) scaleY(0.5);
+          height: 1px;
+          background: #999999;
+          width: 40px;
+        }
+      }
+    }
+    .create-content /deep/ .van-hairline--surround::after {
+      border-radius: 4px;
+    }
+    .create-content /deep/ .van-cell:not(:last-child)::after {
+      top: -50%;
+      right: 0;
+      bottom: -50%;
+      left: 0;
+      border-radius: 4px;
+    }
+    .date-input-item /deep/ .van-field__control{
+      text-align: center;
+    }
+    .upload-item /deep/ .van-uploader__wrapper {
+      justify-content: space-between;
+    }
+    .upload-item /deep/ .van-uploader__upload {
+      width: 120px;
+      height: 120px;
+    }
+    .upload-item /deep/ .van-uploader__preview-image {
+      width: 120px;
+      height: 120px;
+    }
+    .upload-item /deep/ .van-uploader__preview {
+      margin-bottom: 10px;
+    }
+    .item-textarea /deep/ .van-field--min-height .van-field__control {
+      height: 128px;
+    }
+</style>

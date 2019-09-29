@@ -1,0 +1,189 @@
+<template>
+    <div class="change-pwd">
+        <section>
+          <div class="my-list">
+            <van-cell-group>
+              <van-field
+                v-model="password"
+                type="number"
+                label="原密码"
+                placeholder="请输入密码"
+                clearable
+              />
+            </van-cell-group>
+          </div>
+          <div class="my-list">
+            <van-cell-group>
+              <van-field
+                v-model="newPassword"
+                :type="showPwd ? 'text' : 'password'"
+                label="新密码"
+                placeholder="请输入新密码"
+                clearable
+              >
+                <van-button slot="button" class="see-btn" @click="changeShowPwd('1')">
+                  <img v-if="!showPwd" src="../assets/images/eye-see.svg" alt="" srcset="">
+                  <img v-else src="../assets/images/eye-close.svg" alt="" srcset="">
+                </van-button>
+              </van-field>
+              <van-field
+                v-model="confirmPassword"
+                :type=" showConfirmPwd ? 'text' : 'password'"
+                label="确认新密码"
+                placeholder="请再次输入新密码"
+                clearable
+              >
+                <van-button slot="button" class="see-btn" @click="changeShowPwd('2')">
+                  <img v-if="!showConfirmPwd" src="../assets/images/eye-see.svg" alt="" srcset="">
+                  <img v-else src="../assets/images/eye-close.svg" alt="" srcset="">
+                </van-button>
+              </van-field>
+            </van-cell-group>
+          </div>
+          <div class="btn-group">
+            <van-button class="sub" @click="subInfo">提交</van-button>
+          </div>
+        </section>
+    </div>
+</template>
+
+<script>
+
+    import { Cell, CellGroup, Field, Button} from 'vant'
+    import * as core from '../api/my'
+    import { trackEvent } from '../common/js/util'
+
+    export default {
+        name: 'changePwd',
+        data() {
+          return {
+            loading: false,
+            finished: false,
+            password: null,
+            newPassword: null,
+            confirmPassword: null,
+            showPwd: false,
+            showConfirmPwd: false
+          }
+        },
+        created() {
+
+        },
+        methods: {
+          subInfo(){
+            let data = {}
+            if(!this.password){
+              this.$toast("请输入旧密码")
+              return;
+            }
+            data.oldPassword = this.password
+            if(!this.newPassword){
+              this.$toast("请输入新密码")
+              return;
+            }
+            if(!this.confirmPassword){
+              this.$toast("请再次输入确认新密码")
+              return;
+            }else{
+              if(this.confirmPassword !== this.newPassword){
+                this.$toast("请确认输入两次新密码相同")
+                return;
+              }
+            }
+            data.newPassword = this.confirmPassword
+            core.changePassword(data).then(res => {
+              // console.log(res)
+              if (res.code && res.code == '00') {
+                this.$toast(res.message)
+              }else{
+                this.$toast(res.message)
+              }
+            }).catch(err => {
+              this.$toast("网络错误")
+            })
+          },
+          changeShowPwd(type){
+            if(type == '1'){
+              this.showPwd = !this.showPwd
+            }else{
+              this.showConfirmPwd = !this.showConfirmPwd
+            }
+          },
+        },
+        components: {
+          [Cell.name]: Cell,
+          [CellGroup.name]: CellGroup,
+          [Field.name]: Field,
+          [Button.name]: Button,
+        }
+    }
+</script>
+
+<style lang="less" scoped>
+    /*@import "../common/style/mixins";*/
+    .change-pwd {
+      background-color: #F5F5F5!important;
+      width: 100%;
+      height: 100vh;
+      .my-list {
+        margin-bottom: 8px;
+        font-size:16px;
+        color:rgba(51,51,51,1);
+        .van-field {
+          padding: 20px 12px;
+          color:rgba(51,51,51,1);
+          font-size: 15px;
+        }
+      }
+      .see-btn {
+        outline: none;
+        border: none;
+        width: 14px;
+        height: 14px;
+        margin-right: 18px;
+        padding: 0;
+        position: absolute;
+        left: 0;
+        top: 0;
+        img {
+          width: 14px;
+          height: 14px;
+          position: absolute;
+          left: 0;
+          top: 0px;
+        }
+      }
+      .btn-group {
+        text-align: center;
+        margin-top: 114px;
+        .sub {
+          width:351px;
+          height:44px;
+          background:rgba(24,144,255,1);
+          border-radius:22px;
+          font-size:18px;
+          letter-spacing: 4px;
+          color:rgba(255,255,255,1);
+        }
+      }
+
+    }
+    .my-list /deep/ .van-field__label {
+      font-size: 16px;
+    }
+    .my-list /deep/ .van-field__button {
+       width: 14px;
+       height: 14px;
+       position: relative;
+       margin-left: 12px;
+    }
+    .my-list /deep/ .van-button--normal {
+      padding: 0;
+    }
+    .my-list /deep/ .van-button--default:active {
+       background-color: #fff;
+    }
+    .my-list /deep/ .van-button:active::before {
+        opacity: -0.9;
+    }
+</style>

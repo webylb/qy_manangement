@@ -1,0 +1,278 @@
+<template>
+    <div class="hexiao" ref="heixaoContent">
+        <section class="hexiao-wrap">
+          <div class="qr-wrap" @click="handleSao">
+            <img src="../assets/images/sao.png" alt="">
+          </div>
+          <div class="input-group-wrap">
+            <div class="input-item">
+              <van-field class="van-hairline--surround"
+                v-model="couponCode"
+                type="text"
+                placeholder="手动输入券码"
+                @focus="focusInput"
+                clearable
+              />
+
+              <van-button class="right-button sub" @click="subInfo()">提交</van-button>
+
+            </div>
+          </div>
+          <div class="rec" @click="toHexiaoRecord">
+            <p class="rec-text">核销记录</p><img src="../assets/images/right.png" alt="">
+          </div>
+        </section>
+        <van-dialog
+          v-model="showErr"
+          title="核销失败"
+          confirm-button-color="#1890FF"
+        >
+          <img class="dialog-img" src="../assets/images/err.png">
+          <p class="dialog-text">请查看券码是否正确</p>
+        </van-dialog>
+        <van-dialog
+          v-model="showInfo"
+          :title="couponTitle"
+          show-cancel-button
+          confirm-button-color="#1890FF"
+          confirmButtonText="确认核销"
+          @confirm=""
+        >
+          <p class="dialog-subtitle">使用期限</p>
+          <p class="dialog-text2">{{ startTime }} 至 {{ endTime }}</p>
+          <p class="dialog-subtitle">使用规则</p>
+          <p class="dialog-text2">{{ ruleText }}</p>
+        </van-dialog>
+    </div>
+</template>
+
+<script>
+    import { Field, Button, Dialog  } from 'vant'
+    import * as core from '../api/hexiao'
+    import wx from 'weixin-js-sdk'
+    import { trackEvent } from '../common/js/util'
+
+    export default {
+        name: 'heXiao',
+        data() {
+          return {
+            loading: false,
+            finished: false,
+            couponCode: null,
+            showErr: false,
+            showInfo: false,
+            couponTitle: '提示',
+            couponTitle: null,
+            startTime: null,
+            endTime: null,
+            ruleText: null,
+          }
+        },
+        created() {
+          //this.getWXData()
+        },
+        methods: {
+          focusInput(e){
+            // var doc = document.documentElement;
+            // document.body.style.height = doc.scrollHeight+'px';
+          },
+          getWXData() {
+            core.getWXData({url: window.location.href}).then(data => {
+              if (data.code && '00' === data.code) {
+                let sd = data.result
+                wx.config({
+                  debug: false,
+                  appId: sd.appId,
+                  timestamp: sd.timestamp,
+                  nonceStr: sd.nonceStr,
+                  signature: sd.signature,
+                  jsApiList: ['scanQRCode']
+                });
+                wx.error(function (res) {
+                  console.log(res)
+                });
+              }
+            })
+          },
+          handleSao(){
+            let _this = this
+            wx.ready(function () {
+              console.log("微信SDK配置完成")
+              wx.scanQRCode({
+                needResult: 1, // 默认为0，扫描结果由微信处理，1则直接返回扫描结果，
+                success: function (res) {
+                    var result = res.resultStr; // 当needResult 为 1 时，扫码返回的结果
+                    //console.log("扫描结果："+result);
+                    _this.subInfo(result)
+                }
+              })
+            })
+          },
+          subInfo(opts){
+            if(opts){
+              this.getTicketDetail({cardNo: opts})
+            }else{
+              if(this.couponCode){
+                this.getTicketDetail({cardNo: this.couponCode})
+              }else{
+                this.$toast('卡密不能为空')
+              }
+            }
+          },
+          toHexiaoRecord(){
+            this.$router.push('/heixiaoRecord')
+          },
+          getTicketDetail(opts){
+            core.getTicketDetail(opts).then(res => {
+              //console.log(res)
+              if (res.code && res.code == '00') {
+                if(res.result){
+                  this.couponTitle = res.result.title
+                  this.startTime = res.result.startTime
+                  this.endTime = res.result.endTime
+                  this.ruleText = res.result.rule
+                }
+                this.showInfo = true
+              }else{
+                this.$toast(res.message)
+              }
+            }).catch(err => {
+              this.$toast("网络错误")
+            })
+          }
+        },
+        activated() {
+          this.couponCode = null
+          this.getWXData()
+        },
+        components: {
+          [Field.name]: Field,
+          [Button.name]: Button
+        }
+    }
+</script>
+
+<style lang="less" scoped>
+    /*@import "../common/style/mixins";*/
+    .hexiao {
+      .hexiao-wrap {
+        position: relative;
+        padding-top: 43px;
+        .qr-wrap {
+          width: 224px;
+          height: 225px;
+          margin: 0 auto 37px;
+          img {
+            width: 100%;
+            height: 100%;
+          }
+        }
+        .input-group-wrap {
+          margin-bottom: 60px;
+          height: 44px;
+          .input-item {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            height: 44px;
+            margin: 0 12px;
+            .van-field {
+              padding: 10px 12px;
+              width:231px;
+              height:44px;
+              background:rgba(247,247,247,1);
+              border-color:rgba(199,199,199,1);
+              border-radius:22px;
+              font-size:15px;
+              color:rgba(51,51,51,1);
+            }
+            .right-button {
+              width:108px;
+              height:40px;
+              margin-left: 12px;
+              margin-top: 2px;
+              line-height: 40px;
+              background:rgba(24,144,255,1);
+              border-radius:20px;
+              font-size:16px;
+              color:rgba(255,255,255,1);
+            }
+          }
+        }
+        .rec {
+          text-align: center;
+          font-size:14px;
+          text-decoration:underline;
+          color:rgba(24,144,255,1);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          img {
+            width: 12px;
+            height: 12px;
+            margin-left: 4px;
+          }
+        }
+      }
+      .dialog-img {
+        width: 48px;
+        height: 48px;
+        margin-top: 30px;
+        margin-bottom: 17px;
+      }
+      .dialog-subtitle {
+        margin: 0;
+        padding: 0 20px ;
+        box-sizing: border-box;
+        color: #666666;
+        text-align: left;
+        line-height:23px;
+        word-break: break-all;
+        &:first-child {
+          padding-top: 20px;
+        }
+      }
+      .dialog-text, .dialog-text2{
+        font-size:16px;
+        color:#999999;
+        line-height:23px;
+        margin: 0 0 30px;
+        word-break: break-all;
+      }
+      .dialog-text2 {
+        margin: 0;
+        padding: 0 20px;
+        margin: 0;
+        box-sizing: border-box;
+        text-align: left;
+        margin-bottom: 20px;
+      }
+    }
+    .hexiao /deep/ .van-dialog__content{
+      text-align: center;
+    }
+    .hexiao /deep/ .van-dialog__header {
+      padding-left: 20px;
+      padding-right: 20px;
+      box-sizing: border-box;
+      word-break: break-all;
+      font-size: 18px;
+    }
+    .hexiao /deep/ .van-cell:not(:last-child)::after {
+      position: absolute;
+      box-sizing: border-box;
+      content: ' ';
+      pointer-events: none;
+      top: -50%;
+      right: -50%;
+      bottom: -50%;
+      left: -50%;
+      -webkit-transform: scale(.5);
+      transform: scale(.5);
+    }
+    @keyframes scale {
+      0% {transform: scale(1.0)}
+      50% {transform: scale(1.1)}
+      100% {transform: scale(1.0)}
+    }
+</style>

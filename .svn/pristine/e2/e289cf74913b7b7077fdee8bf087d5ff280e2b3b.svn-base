@@ -1,0 +1,90 @@
+<template>
+    <div class="bottom-bar">
+        <keep-alive>
+            <router-view v-transition class="router-wrap"/>
+        </keep-alive>
+        <van-tabbar route safe-area-inset-bottom inactive-color="#A8B8C7" active-color="#1890FF" v-model="active" class="van-hairline--top">
+            <van-tabbar-item route to="/home" replace name="home">
+                <span>券码生成</span>
+                <img
+                  slot="icon"
+                  slot-scope="props"
+                  :src="props.active ? icon[0].active : icon[0].normal"
+                >
+            </van-tabbar-item>
+            <van-tabbar-item route to="/hexiao" replace name="hexiao">
+                <span>核销</span>
+                <img
+                  slot="icon"
+                  slot-scope="props"
+                  :src="props.active ? icon[1].active : icon[1].normal"
+                >
+            </van-tabbar-item>
+            <van-tabbar-item route to="/my" replace name="my">
+                <span>我的</span>
+                <img
+                  slot="icon"
+                  slot-scope="props"
+                  :src="props.active ? icon[2].active : icon[2].normal"
+                >
+            </van-tabbar-item>
+        </van-tabbar>
+    </div>
+</template>
+
+<script>
+    import {Tabbar, TabbarItem} from 'vant'
+    export default {
+        name: "BottomBar",
+        data() {
+          return {
+            active: 'home',
+            icon: [
+              {
+                normal: require('../assets/images/bar/create1.svg'),
+                active: require('../assets/images/bar/create2.svg')
+              },
+              {
+                normal: require('../assets/images/bar/hexiao1.svg'),
+                active: require('../assets/images/bar/hexiao2.svg')
+              },
+              {
+                normal: require('../assets/images/bar/my1.svg'),
+                active: require('../assets/images/bar/my2.svg')
+              }
+            ]
+          }
+        },
+        components: {
+          [TabbarItem.name]: TabbarItem,
+          [Tabbar.name]: Tabbar
+        },
+        mounted() {
+          this.setHeaderTitle()
+        },
+        methods: {
+          setHeaderTitle(){
+                document.title = this.$route.meta.title;
+                this.headerTitle = this.$route.meta.title;
+            }
+        },
+    }
+</script>
+
+<style lang="less" scoped>
+    .bottom-bar {
+      .router-wrap {
+          padding-bottom: 1.33333rem;
+      }
+      .van-tabbar{
+        border-color: rgba(230,230,230,1);
+      }
+      .router-wrap {
+        min-width: 100vw;
+        min-height: 100vh;
+        box-sizing: border-box;
+        background-color: #fff;
+        max-width: 750px;
+      }
+    }
+</style>

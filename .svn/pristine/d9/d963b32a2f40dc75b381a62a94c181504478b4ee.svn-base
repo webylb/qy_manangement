@@ -1,0 +1,393 @@
+<template>
+    <div class="home">
+        <div class="home-wrap" v-if="!loadingStatus">
+          <section class="default-wrap" v-show="tableData">
+            <van-search
+              v-model="searchText"
+              placeholder="请输入券码名称"
+              show-action
+              shape="round"
+              @search="onSearch"
+            >
+              <div slot="left-icon"><img class="search" src="../assets/images/search.png" alt=""></div>
+              <div slot="action" @click="onSearch" class="search-btn">搜索</div>
+            </van-search>
+            <div class="data-table">
+              <van-list
+                v-model="loading"
+                :finished="finished"
+                finished-text="没有更多了~"
+                @load="onLoad"
+                :offset="offsetVal"
+                :immediate-check="checkStatus"
+              >
+                <div class="data-table-item van-hairline--bottom data-table-title">
+                  <div class="td-width td-name">券码名称</div>
+                  <div class="td-default">类型</div>
+                  <div class="td-default td-price">售价</div>
+                  <div class="td-default">剩余张数</div>
+                  <div class="td-default">操作</div>
+                </div>
+                <div v-if="tableData.length > 0">
+                  <div class="data-table-item van-hairline--bottom" v-for="(item,index) in tableData" :key="index">
+                    <div class="td-width td-name">{{ item.title }}</div>
+                    <div class="td-default">{{ item.category }}</div>
+                    <div class="td-default td-price">{{ item.salePrice }}</div>
+                    <div class="td-default">{{ item.batchCount }}</div>
+                    <div class="td-default">
+                      <span class="success" v-if="item.status == 'SUCCESS'" @click="toDetail(item.id)">查看</span>
+                      <span class="wait" v-else-if="item.status == 'WAIT'" @click="showWaitInfo">待审核</span>
+                      <span class="fail" v-else-if="item.status == 'FAIL'" @click="showErrInfo(item.rejectReason)">已驳回</span>
+                    </div>
+                  </div>
+                </div>
+
+              </van-list>
+            </div>
+            <div class="btn-wrap">
+              <van-button icon="plus" class="createCoupon" @click="toCreateCoupon">新增券码</van-button>
+            </div>
+            <div class="customer-service">
+              客服电话: <a href="tel:4006680091">4006680091</a>
+            </div>
+          </section>
+          <section class="no-data-wrap" v-show="!tableData">
+            <div class="img-wrap">
+              <img src="../assets/images/no-coupon.png" alt="">
+            </div>
+            <p class="no-data-hint">您还未拥有券码，请前去新增~</p>
+            <div class="btn-wrap">
+              <van-button icon="plus" class="createCoupon" @click="toCreateCoupon">新增券码</van-button>
+            </div>
+            <div class="customer-service">
+              客服电话: <a href="tel:4006680091">4006680091</a>
+            </div>
+          </section>
+        </div>
+        <van-loading v-else size="24px" type="spinner" vertical style="padding-top:45%;">加载中...</van-loading>
+        <van-dialog
+          v-model="showWait"
+          title="温馨提示"
+          confirm-button-color="#1890FF"
+        >
+          <p class="dialog-text">券码审核中，请耐心等待~</p>
+        </van-dialog>
+        <van-dialog
+          v-model="showErr"
+          title="券码驳回"
+          confirm-button-color="#1890FF"
+        >
+          <p class="dialog-text">{{ errText }}</p>
+        </van-dialog>
+    </div>
+</template>
+
+<script>
+    import * as core from '../api/home'
+    import { Loading, Button, Search, List } from 'vant'
+
+    export default {
+        name: 'home',
+        data() {
+          return {
+            loadingStatus: true,
+            offsetVal: 1,
+            checkStatus: false,
+            loading: false,
+            finished: false,
+            tableData: [],
+            searchText: null,
+            pageIndex: 1,
+            pageSize: 10,
+            totalRecord: 0,
+            showWait: false,
+            showErr: false,
+            errText: null
+          }
+        },
+        components: {
+            [Loading.name]: Loading,
+            [Button.name]: Button,
+            [Search.name]: Search,
+            [List.name]: List
+        },
+        created() {
+          document.title = this.$route.meta.title;
+          this.getPagerInfo({pageIndex:this.pageIndex,pageSize: this.pageSize})
+        },
+        methods: {
+          onLoad() {
+            let data = { pageIndex: this.pageIndex, pageSize: this.pageSize }
+            if(this.searchText){
+              data.title =  this.searchText
+            }
+            this.getPagerInfo(data)
+          },
+          getPagerInfo(opts,isSearch){
+            core.getPagerInfo(opts).then(res => {
+              //console.log(res)
+              if (res.code && res.code == '00') {
+                if(isSearch == 'search'){
+                  if(res.result.data){
+                    this.tableData = []
+                    this.tableData = this.tableData.concat(res.result.data)
+                  }else{
+                    this.tableData = []
+                  }
+                }else{
+                  if(res.result.data){
+                    this.tableData = this.tableData.concat(res.result.data)
+                  }else{
+                    this.tableData = []
+                  }
+                }
+                this.totalRecord = res.result.totalRecord
+                this.loading = false
+                this.pageIndex = opts.pageIndex + 1
+                if(this.tableData.length >= this.totalRecord){
+                  this.finished = true;
+                }
+                this.loadingStatus = false
+              }else{
+                this.$toast(res.message)
+              }
+            })
+          },
+          toDetail(id){
+            this.$router.push({path: '/createCouponPrev',query: {batchId: id}})
+          },
+          showWaitInfo(){
+            this.showWait = !this.showWait
+          },
+          showErrInfo(text){
+            this.errText = text
+            this.showErr = !this.showErr
+          },
+          toCreateCoupon(){
+            this.$router.push('/createCoupon')
+          },
+          onSearch(){
+            let data = { pageIndex: 1, pageSize: this.pageSize }
+            if(this.searchText){
+              data.title =  this.searchText
+            }
+            this.getPagerInfo(data, 'search')
+          }
+        },
+        activated() {
+          // document.title = this.$route.meta.title;
+          // console.loh('activated')
+          // this.getPagerInfo({pageIndex:this.pageIndex,pageSize: this.pageSize})
+        },
+    }
+</script>
+
+<style lang="less" scoped>
+    .home {
+      width: 100%;
+      .home-wrap {
+        width: 100%;
+        .no-data-wrap {
+          padding-top: 105px;
+          .img-wrap {
+            width: 290px;
+            height: 136px;
+            margin: 0 auto;
+            img {
+              width: 100%;
+              height: 100%;
+            }
+          }
+          .no-data-hint {
+            margin-top: 30px;
+            font-size:14px;
+            color:rgba(170,170,170,1);
+            width: 100%;
+            text-align: center;
+          }
+          .btn-wrap {
+            margin-top: 60px;
+            width: 100%;
+            text-align: center;
+            .createCoupon {
+              width:225px;
+              height:44px;
+              background:rgba(24,144,255,1);
+              border-radius:22px;
+              font-size:18px;
+              color:rgba(255,255,255,1);
+            }
+          }
+          .customer-service {
+            position: absolute;
+            bottom: 69px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            font-size: 12px;
+            letter-spacing: 0rem;
+            color: #999999;
+            text-align: center;
+            a {
+              color: #1890FF;
+            }
+            &::before {
+              content: '';
+              position: absolute;
+              left: -45px;
+              top: 50%;
+              transform: translateY(-50%) scaleY(0.5);
+              height: 1px;
+              background: #999999;
+              width: 40px;
+            }
+            &::after {
+              content: '';
+              position: absolute;
+              right: -45px;
+              top: 50%;
+              transform: translateY(-50%) scaleY(0.5);
+              height: 1px;
+              background: #999999;
+              width: 40px;
+            }
+          }
+        }
+        .default-wrap {
+          padding-top: 16px;
+          .van-search {
+            padding: 0;
+            margin: 0 12px 16px;
+            .search {
+              width: 20px;
+              height: 20px;
+              vertical-align: middle;
+            }
+          }
+          .search-btn {
+            width:64px;
+            height:30px;
+            line-height: 30px;
+            background:rgba(24,144,255,1);
+            border-radius:18px;
+            text-align: center;
+            font-size:14px;
+            color:rgba(255,255,255,1);
+          }
+          .data-table {
+            .data-table-item {
+              display: flex;
+              justify-content: flex-start;
+              align-items: center;
+              min-height: 44px;
+              font-size:13px;
+              color:rgba(102,102,102,1);
+              text-align: center;
+              border-color: rgba(230,230,230,1);
+              line-height:20px;
+              padding: 15px;
+              box-sizing: border-box;
+              .td-default {
+                flex: 1;
+                word-break: break-all;
+              }
+              .td-width {
+                flex: 1.4;
+                word-break: break-all;
+              }
+              .td-name {
+                text-align: left;
+              }
+              .td-price {
+                // text-align: right;
+              }
+              .success {
+                color: #1890FF;
+              }
+              .wait {
+                color: #F89739;
+              }
+              .fail {
+                color: #999999;
+              }
+            }
+            .data-table-title {
+              background: #E7F4FF;
+              font-size:15px;
+              color:rgba(51,51,51,1);
+            }
+          }
+          .btn-wrap {
+            margin-top: 62px;
+            width: 100%;
+            text-align: center;
+            .createCoupon {
+              width:225px;
+              height:44px;
+              background:rgba(24,144,255,1);
+              border-radius:22px;
+              font-size:18px;
+              color:rgba(255,255,255,1);
+            }
+          }
+          .customer-service {
+            width: 150px;
+            font-size: 12px;
+            letter-spacing: 0rem;
+            color: #999999;
+            text-align: center;
+            position: relative;
+            margin: 50px auto 20px;
+
+            a {
+              color: #1890FF;
+            }
+            &::before {
+              content: '';
+              position: absolute;
+              left: -45px;
+              top: 50%;
+              transform: translateY(-50%) scaleY(0.5);
+              height: 1px;
+              background: #999999;
+              width: 40px;
+            }
+            &::after {
+              content: '';
+              position: absolute;
+              right: -45px;
+              top: 50%;
+              transform: translateY(-50%) scaleY(0.5);
+              height: 1px;
+              background: #999999;
+              width: 40px;
+            }
+          }
+        }
+      }
+    .dialog-text {
+        font-size:16px;
+        color:rgba(102,102,102,1);
+        line-height:23px;
+        margin: 35px 0;
+        text-align: center;
+        width: 100%;
+        padding: 0 12px;
+        line-height: 20px;
+        word-break: break-all;
+        box-sizing: border-box;
+      }
+    }
+    .hexiao /deep/ .van-dialog__content{
+      text-align: center;
+    }
+    .home /deep/ .van-button__icon {
+      font-size: 1em;
+    }
+    .home /deep/ .van-search__action:active{
+      background-color: transparent;
+    }
+    .home /deep/ .van-list__finished-text {
+      padding-top: 30px;
+    }
+</style>

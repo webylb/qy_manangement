@@ -1,0 +1,58 @@
+import axios from '../common/js/http'
+import CONFIG from './config'
+import qs from 'qs'
+import {requestDispose} from '../common/js/util'
+
+/**
+ * 获取卡券
+ * */
+export function getPagerInfo(opts) {
+    return axios.post(CONFIG.API.GET_PAGER, qs.stringify({
+      title: opts.title || '',
+      category: opts.category || '',
+      startTime: opts.startTime || '',
+      endTime: opts.endTime || '',
+      status: opts.status || '',
+      pageSize: opts.pageSize || 1,
+      pageIndex: opts.pageIndex || 10
+    }), {headers: {showLoading: false}}).then(res => {
+      return requestDispose(res)
+    })
+}
+
+/**
+ * 获取卡券详情
+ * */
+export function getPagerItemDetail(opts) {
+  return axios.post(CONFIG.API.GET_PAGER_DETAIL, qs.stringify({
+    batchId: opts.batchId
+  }), {headers: {showLoading: false}}).then(res => {
+    return requestDispose(res)
+  })
+}
+
+/**
+ * 生成卡券
+ * */
+export function createPager(opts) {
+  return axios.post(CONFIG.API.CREATE_PAGER, qs.stringify({
+    title: opts.title,
+    category: opts.category,
+    salePrice: opts.salePrice,
+    batchCount: opts.batchCount,
+    startTime: opts.startTime,
+    endTime: opts.endTime,
+    coverImgs: opts.coverImgs,
+    rule: opts.rule
+  }), {headers: {showLoading: true}}).then(res => {
+    return requestDispose(res)
+  })
+}
+
+
+/**
+ * 上传图片
+ * */
+export function uplaodImg(opts) {
+  return axios.post(CONFIG.API.UPLOAD_IMG, opts).then(res => requestDispose(res))
+}

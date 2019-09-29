@@ -1,0 +1,502 @@
+<template>
+    <div class="record">
+        <section  v-if="!loadingStatus">
+          <van-dropdown-menu>
+            <van-dropdown-item title="筛选" ref="item">
+              <div class="data-wrap">
+                <p class="title">时间筛选</p>
+                <div class="cont">
+                  <div class="field-wrap">
+                    <van-field class="van-hairline--surround" :class="[timeType == 'start' ? 'activeField' : '']"
+                      v-model="startTime"
+                      type="text"
+                      placeholder="开始时间"
+                      @click="clickStartTime"
+                      readonly
+                      clearable
+                    />
+                    <div class="line">
+                      --
+                    </div>
+                    <van-field class="van-hairline--surround" :class="[timeType == 'end' ? 'activeField' : '']"
+                      v-model="endTime"
+                      type="text"
+                      placeholder="结束时间"
+                      @click="clickEndTime"
+                      readonly
+                      clearable
+                    />
+                  </div>
+                  <transition name="van-slide-right">
+                  <div v-show="showDate" class="date">
+                    <van-datetime-picker
+                      v-model="currentDate"
+                      type="date"
+                      :show-toolbar='showToolbar'
+                      @change="getDateVal"
+                    />
+                  </div>
+                  </transition>
+                </div>
+              </div>
+              <div class="data-wrap btn-wrap">
+                <p class="title">选择审核状态</p>
+                <div class="cont">
+                  <van-button class="btn-item" :class="[item.id == activeIndex ? 'active-btn': '']" @click="changeIndex(item.id)" v-for="(item,index) in buttonList" :key="index">
+                    {{ item.text }}
+                    <img v-if="item.id == activeIndex" src="../assets/images/active.png" alt="">
+                  </van-button>
+                </div>
+              </div>
+              <div class="btn-group-wrap">
+                <van-button class="cancle-btn" @click="onReset">重置</van-button>
+                <van-button class="confirm-btn" @click="onConfirm">确定</van-button>
+              </div>
+            </van-dropdown-item>
+          </van-dropdown-menu>
+          <div class="total">
+            共{{ totalRecord || 0 }}条
+          </div>
+          <div class="data-list">
+            <van-list
+              v-model="loading"
+              :finished="finished"
+              finished-text="没有更多了"
+              @load="onLoad"
+              :offset="offsetVal"
+              :immediate-check="checkStatus"
+            >
+              <div class="data-item van-hairline--bottom" v-for="(item,index) in listData" :key="index">
+                <div class="left-img">
+                  <img src="../assets/images/coupon-icon.png" alt="" srcset="">
+                </div>
+                <div class="center-data">
+                  <div class="title">
+                    {{ item.title }}
+                  </div>
+                  <div class="sub-title">
+                    {{ item.category }}
+                  </div>
+                  <div class="date">
+                    {{ formatTime(item.createTime) }}
+                  </div>
+                </div>
+                <div class="right-price">
+                  <div class="text">售价:</div><div class="num">{{ item.salePrice }}</div>
+                </div>
+                <div class="type-wrap">
+                  <span class="success" v-if="item.status == 'SUCCESS'">已通过</span>
+                  <span class="wait" v-if="item.status == 'WAIT'">待审核</span>
+                  <span class="fail" v-if="item.status == 'FAIL'">已驳回</span>
+                </div>
+              </div>
+            </van-list>
+          </div>
+        </section>
+        <van-loading v-else size="24px" type="spinner" vertical style="padding-top:45%;">加载中...</van-loading>
+    </div>
+</template>
+
+<script>
+
+    import { Loading, Cell, CellGroup, DropdownMenu, DropdownItem, Field, Button, DatetimePicker, Icon, List} from 'vant'
+    import * as core from '../api/home'
+    import { timeFormat } from '../common/js/util'
+
+    export default {
+        name: 'record',
+        data() {
+          return {
+            loadingStatus: true,
+            loading: false,
+            finished: false,
+            offsetVal: 1,
+            checkStatus: false,
+            currentDate: new Date(),
+            showDate: false,
+            showToolbar: false,
+            timeType: null,
+            startTime: null,
+            endTime: null,
+            listData: [],
+            totalRecord: null,
+            pageIndex: 1,
+            pageSize: 10,
+            activeIndex: null,
+            activeStatus: null,
+            buttonList: [
+              {
+                text: '已通过',
+                id: 0
+              },
+              {
+                text: '待审核',
+                id: 1
+              },
+              {
+                text: '已驳回',
+                id: 2
+              }
+            ]
+          }
+        },
+        watch: {
+          startTime(newVal,oldVal){
+            if(this.endTime){
+              if(newVal > this.endTime){
+                this.endTime = null
+              }
+            }
+          },
+          endTime(newVal,oldVal){
+            console.log(this.startTime)
+            if(this.startTime){
+              if(newVal < this.startTime){
+                this.$toast('结束时间不能小于开始时间')
+                this.endTime = null
+              }
+            }else{
+              if(newVal){
+                this.$toast('请先选择开始时间')
+                this.endTime = null
+              }
+            }
+          },
+        },
+        created() {
+          document.title = this.$route.meta.title;
+          this.getPagerInfo({pageIndex:this.pageIndex,pageSize: this.pageSize})
+        },
+        methods: {
+          onLoad() {
+            let data = {pageIndex:this.pageIndex,pageSize: this.pageSize}
+            if(this.startTime){
+              data.startTime = this.startTime
+            }
+            if(this.endTime){
+              data.endTime = this.endTime
+            }
+            this.getPagerInfo(data)
+          },
+          getPagerInfo(opts,isShow){
+            core.getPagerInfo(opts).then(res => {
+              //console.log(res)
+              if (res.code && res.code == '00') {
+                if(res.result.data && isShow){
+                  this.listData = []
+                  this.listData = this.listData.concat(res.result.data)
+                }else{
+                  this.listData = this.listData.concat(res.result.data)
+                }
+                this.totalRecord = res.result.totalRecord
+                this.loading = false
+                this.pageIndex = opts.pageIndex + 1
+                if(this.listData.length >= this.totalRecord){
+                  this.finished = true;
+                }
+                this.loadingStatus = false
+                if(isShow == 'close'){
+                  this.$refs.item.toggle();
+                  this.startTime = null
+                  this.endTime = null
+                  this.showDate = false
+                  this.activeIndex = null
+                }
+              }else{
+                this.$toast(res.message)
+              }
+            }).catch(err => {
+              this.$toast("网络错误")
+            })
+          },
+          formatTime(val){
+            return timeFormat(val, 2)
+          },
+          clickStartTime(){
+            this.timeType = 'start'
+            this.showDate = true
+            this.startTime = null
+          },
+          clickEndTime(){
+            this.timeType = 'end'
+            this.showDate = true
+            this.endTime = null
+          },
+          getDateVal(ele){
+            let date = ele.getValues()
+            if(this.timeType == 'start'){
+              this.startTime = timeFormat(new Date(date[0], date[1] - 1, date[2]).getTime())
+            }else{
+              this.endTime = timeFormat(new Date(date[0], date[1] - 1, date[2]).getTime())
+            }
+          },
+          onReset(){
+            this.startTime = null
+            this.endTime = null
+            this.activeIndex = null
+            this.activeStatus = null
+          },
+          onConfirm() {
+            let data = {pageIndex:1 ,pageSize: this.pageSize}
+            if(this.startTime){
+              data.startTime = this.startTime
+            }
+            if(this.endTime){
+              data.endTime = this.endTime
+            }
+            if(this.activeStatus){
+              data.status = this.activeStatus
+            }
+            this.getPagerInfo(data, 'close')
+          },
+          changeIndex(id){
+            this.timeType = null
+            this.showDate = false
+            this.activeIndex = id
+            if(id == 0){
+              this.activeStatus = 'SUCCESS'
+            }else if(id == 1){
+              this.activeStatus = 'WAIT'
+            }else{
+              this.activeStatus = 'FAIL'
+            }
+          }
+        },
+        components: {
+          [Loading.name]: Loading,
+          [Cell.name]: Cell,
+          [CellGroup.name]: CellGroup,
+          [DropdownMenu.name]: DropdownMenu,
+          [DropdownItem.name]: DropdownItem,
+          [Button.name]: Button,
+          [Field.name]: Field,
+          [Icon.name]: Icon,
+          [DatetimePicker.name]: DatetimePicker,
+          [List.name]: List
+        }
+    }
+</script>
+
+<style lang="less" scoped>
+    /*@import "../common/style/mixins";*/
+    .record {
+      width: 100%;
+      .data-wrap {
+        padding: 0 12px;
+        padding-top: 27px;
+        min-height: 30px;
+        .title {
+          margin: 0;
+          font-size:14px;
+          font-family:PingFang SC;
+          font-weight:400;
+          color:rgba(51,51,51,1);
+          margin-bottom: 12px;
+        }
+        .cont {
+          padding-bottom: 50px;
+        }
+        .field-wrap {
+          display: flex;
+          justify-content: flex-start;
+          align-items: center;
+          .van-field {
+            width:137px;
+            height:44px;
+            padding: 10px 9px;
+            border-color: rgba(199,199,199,1);
+            border-radius:4px;
+          }
+          .activeField {
+            &::after {
+              border-color: #1890ff;
+              position: absolute;
+              box-sizing: border-box;
+              content: ' ';
+              pointer-events: none;
+              top: -50%;
+              right: -50%;
+              bottom: -50%;
+              left: -50%;
+              -webkit-transform: scale(.5);
+              transform: scale(.5);
+            }
+          }
+          .line {
+            color: rgba(199,199,199,1);
+            margin: 0 3px;
+            transform: scale(0.5)
+          }
+        }
+        .date {
+          margin-top: 30px;
+        }
+      }
+      .btn-wrap {
+        padding-top: 0;
+        .btn-item {
+          width:68px;
+          height:28px;
+          background:rgba(238,238,238,1);
+          border-radius:2px;
+          margin-right: 16px;
+          padding: 0;
+          line-height: 28px;
+        }
+        .active-btn {
+          position: relative;
+          background:rgba(203,230,255,1);
+          color:rgba(24,144,255,1);
+        }
+        img {
+          position: absolute;
+          right: 0;
+          bottom: 0;
+          width: 15px;
+          height: 15px;
+        }
+      }
+      .btn-group-wrap {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        .van-button {
+          flex: 1;
+          height:44px;
+          background:rgba(203,230,255,1);
+          font-size:16px;
+          letter-spacing: 4px;
+          border: none;
+          border-radius: 0;
+        }
+        .cancle-btn {
+          color:rgba(24,144,255,1);
+        }
+        .confirm-btn {
+          background:rgba(24,144,255,1);
+          color:rgba(255,255,255,1);
+        }
+      }
+      .total {
+        width:100%;
+        height:28px;
+        padding: 0 12px;
+        box-sizing: border-box;
+        background:rgba(245,245,245,1);
+        font-size: 12px;
+        color:rgba(153,153,153,1);
+        line-height: 28px;
+        text-align: right;
+      }
+      .data-list {
+        padding-left: 12px;
+        box-sizing: border-box;
+        .data-item {
+          padding: 17px 12px 17px 0;
+          display: flex;
+          justify-content: flex-start;
+          align-items: flex-start;
+          position: relative;
+          .left-img {
+            width: 35px;
+            height: 35px;
+            img {
+              width: 100%;
+              height: auto;
+            }
+          }
+          .center-data {
+            width: 210px;
+            padding-left: 10px;
+            .title {
+              font-size:16px;
+              color:rgba(51,51,51,1);
+              overflow:hidden; //超出的文本隐藏
+              text-overflow:ellipsis; //溢出用省略号显示
+              white-space:nowrap; //溢出不换
+            }
+            .sub-title {
+              font-size:12px;
+              color:rgba(51,51,51,1);
+              margin: 10px 0;
+            }
+            .date {
+              font-size:12px;
+              color:rgba(153,153,153,1);
+            }
+          }
+          .right-price {
+            width: 120px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-end;
+
+            .text {
+              font-size:13px;
+              color:rgba(51,51,51,1);
+            }
+            .num {
+              margin-left: 5px;
+              font-size:22px;
+              color:rgba(51,51,51,1);
+            }
+          }
+          .type-wrap {
+            position: absolute;
+            right: 12px;
+            bottom: 13px;
+            width:48px;
+            height:18px;
+            line-height: 18px;
+            text-align: center;
+            border-radius:2px;
+            font-size:12px;
+            overflow: hidden;
+            .success {
+              display: block;
+              width: 100%;
+              height: 100%;
+              background-color: #93CBFF;
+              color: #fff;
+            }
+            .wait {
+              display: block;
+              width: 100%;
+              height: 100%;
+              background-color: #FFBB79;
+              color: #fff;
+            }
+            .fail {
+              display: block;
+              width: 100%;
+              height: 100%;
+              background-color: #FF7979;
+              color: #fff;
+            }
+          }
+        }
+      }
+    }
+    .record /deep/ .van-dropdown-menu{
+      height: 44px;
+    }
+    .record /deep/ .van-dropdown-menu__item {
+      justify-content: flex-start;
+      height: 44px;
+    }
+    .record /deep/ .van-field__control{
+      text-align: center;
+    }
+    .record /deep/ .van-cell:not(:last-child)::after {
+      position: absolute;
+      box-sizing: border-box;
+      content: ' ';
+      pointer-events: none;
+      top: -50%;
+      right: -50%;
+      bottom: -50%;
+      left: -50%;
+      -webkit-transform: scale(.5);
+      transform: scale(.5);
+    }
+</style>
