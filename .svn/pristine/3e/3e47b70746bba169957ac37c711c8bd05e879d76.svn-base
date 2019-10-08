@@ -49,7 +49,7 @@
 <script>
     import { Field, Button, Dialog  } from 'vant'
     import * as core from '../api/hexiao'
-    import wx from 'weixin-jsapi'
+    import wx from 'weixin-js-sdk'
     import { timeFormat } from '../common/js/util'
 
     export default {
@@ -66,11 +66,10 @@
             startTime: null,
             endTime: null,
             ruleText: null,
-            signLink: null
           }
         },
         created() {
-
+          //this.getWXData()
         },
         methods: {
           focusInput(e){
@@ -78,16 +77,7 @@
             // document.body.style.height = doc.scrollHeight+'px';
           },
           handleSao(){
-            let _this = this
-            wx.scanQRCode({
-              needResult: 1, // 默认为0，扫描结果由微信处理，1则直接返回扫描结果，
-              success: function (res) {
-                  var result = res.resultStr; // 当needResult 为 1 时，扫码返回的结果
-                  console.log("扫描结果："+result);
-                  _this.subInfo(result)
-                  _this.couponCode = result
-              }
-            })
+            this.getWXData()
           },
           getWXData() {
             let _this = this
@@ -104,6 +94,15 @@
                 });
                 wx.ready(function () {
                   console.log("微信SDK配置完成")
+                  wx.scanQRCode({
+                    needResult: 1, // 默认为0，扫描结果由微信处理，1则直接返回扫描结果，
+                    success: function (res) {
+                        var result = res.resultStr; // 当needResult 为 1 时，扫码返回的结果
+                        console.log("扫描结果："+result);
+                        _this.subInfo(result)
+                        _this.couponCode = result
+                    }
+                  })
                 })
                 wx.error(function (res) {
                   console.log(res)
@@ -160,7 +159,6 @@
           },
         },
         activated() {
-          this.getWXData()
           document.title = this.$route.meta.title;
           this.couponCode = null
         },
