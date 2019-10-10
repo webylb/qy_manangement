@@ -337,11 +337,13 @@
           padding: 0;
           line-height: 28px;
           color: #666;
+          border: none;
         }
         .active-btn {
           position: relative;
           background:rgba(203,230,255,1);
           color:rgba(24,144,255,1);
+          border: none;
         }
         img {
           position: absolute;

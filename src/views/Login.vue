@@ -10,6 +10,7 @@
                 type="number"
                 placeholder="请输入手机号"
                 @focus="focusInput"
+                @blur="blurInput"
                 clearable
               />
             </div>
@@ -20,6 +21,7 @@
                 :type=" showPwd ? 'text' : 'password'"
                 placeholder="请输入密码"
                 @focus="focusInput"
+                @blur="blurInput"
                 clearable
               />
               <img class="right-icon" v-if="!showPwd" @click="changeShowPwd('1')" src="../assets/images/eye-see.svg" alt="">
@@ -48,7 +50,8 @@
         return {
           mobile: null,
           password: null,
-          showPwd: false
+          showPwd: false,
+          clientHeight: '100vh',
         }
       },
       components: {
@@ -56,8 +59,23 @@
         [CellGroup.name]: CellGroup,
         [Button.name]: Button
       },
+      watch: {
+
+      },
       created() {
-        document.title = this.$route.meta.title;
+        document.title = this.$route.meta.title
+      },
+      mounted() {
+        // let resizeTag = true
+        // window.onresize = () => {
+        //   if (resizeTag) {
+        //     document.activeElement.scrollIntoViewIfNeeded(true);
+        //     resizeTag = false
+        //     setTimeout(() => {
+        //       resizeTag = true
+        //     }, 100)
+        //   }
+        // }
       },
       methods: {
         changeShowPwd(type){
@@ -67,7 +85,49 @@
           let hrt = this.$refs.loginContent.offsetHeight
           this.$refs.loginContent.style.height = hrt + 'px'
         },
+        blurInput(){
+          console.log(window.screen.height)
+          window.scrollTo(0, document.documentElement.clientHeight);
+          // this.blurAdjust()
+          // if(/(Android)/i.test(navigator.userAgent)){
+          //   let winHeight;
+          //   let screenHeight = window.screen.height;
+          //   let flag = false;
+          //   if(document.documentElement.clientHeight > screenHeight  * 0.66) {
+          //       winHeight = document.documentElement.clientHeight
+          //   } else {
+          //       flag = true;
+          //   }
+          //   window.onresize = () => {
+          //     if (flag) {
+          //       winHeight = document.documentElement.clientHeight
+          //     }
+          //     let defh = document.documentElement.clientHeight - winHeight;
+          //     this.$refs.loginContent.style.transform = 'translateY('+defh+'px)'
+          //     //$(".scroll-wrapper").css('-webkit-transform','translateY('+defh+'px)');
+          //   }
+          // }
+        },
+        blurAdjust(){
+          setTimeout(()=>{
+            if(document.activeElement.tagName == 'INPUT' || document.activeElement.tagName == 'TEXTAREA'){
+              return
+            }
+            let result = 'pc';
+            if(/(iPhone|iPad|iPod|iOS)/i.test(navigator.userAgent)) { //判断iPhone|iPad|iPod|iOS
+                result = 'ios'
+            }else if(/(Android)/i.test(navigator.userAgent)) {  //判断Android
+                result = 'android'
+            }
+
+            // if( result = 'ios' ){
+            //   document.activeElement.scrollIntoViewIfNeeded(true);
+            // }
+            document.activeElement.scrollIntoViewIfNeeded(true);
+          }, 100)
+        },
         subLogin(){
+          window.scrollTo(0, document.documentElement.clientHeight);
           this.$refs.mobile.blur()
           this.$refs.password.blur()
           let data = {}
@@ -209,5 +269,51 @@
     }
     .login /deep/ .van-cell:not(:last-child)::after {
       border: none;
+    }
+    .pwd-box{
+      width:270Px;
+      height: 44Px;
+	    position: relative;
+	    border-radius: 3Px;
+      overflow:hidden;
+      margin: 0 auto;
+    }
+
+    .pwd-box .van-field {
+      width: 100%;
+      height: 44Px;
+      color: transparent;
+      position: absolute;
+      top: 0;
+      left: 0;
+      border: none;
+      font-size: 18Px;
+      opacity: 0;
+      z-index: 1;
+      letter-spacing: 35Px;
+
+      input {
+        width: 100%;
+        height: 100%;
+        padding: 0;
+        margin: 0;
+      }
+    }
+
+    .fake-box {
+      width: 270px;
+      height: 44px;
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      padding-left: 12px;
+      border: none;
+      .box{
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+          background-color: #000;
+          margin-right: 2px;
+      }
     }
 </style>

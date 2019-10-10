@@ -13,8 +13,8 @@ import {Toast, Dialog} from 'vant';
 
 Vue.prototype.$md5 = md5;
 
-// import VConsole from 'vconsole'
-// Vue.use(new VConsole())
+import VConsole from 'vconsole'
+Vue.use(new VConsole())
 
 if(process.env.NODE_ENV === 'development'){
     // document.cookie = "CASH_STORE_COOKIE="+"\"sessionId=3a00ea28cbee6a2b5cf5def45eef08e9&storeId=9\""

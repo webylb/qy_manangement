@@ -49,6 +49,7 @@
         line-height: 1;
         font-family: "PingFang SC", "Heiti SC", Helvetica, sans-serif;
         max-width: 750px;
+        // position: relative;
 
         .van-nav-bar  {
             z-index: 100!important;
@@ -68,11 +69,17 @@
             background-color: #ededed;
         }
         .router-wrap {
-        min-width: 100vw;
-        min-height: 100vh;
-        box-sizing: border-box;
-        background-color: #fff;
-        max-width: 750px;
-      }
+          width: 100vw;
+          height: 100vh;
+          box-sizing: border-box;
+          background-color: #fff;
+          max-width: 750px;
+          // position: fixed;
+          // left: 0;
+          // top: 0;
+          // bottom: 0;
+          // right: 0;
+          // overflow-y: scroll;
+        }
     }
 </style>

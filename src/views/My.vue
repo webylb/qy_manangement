@@ -121,7 +121,8 @@
               // console.log(res)
               if (res.code && res.code == '00') {
                 this.$toast(res.message)
-                this.$router.push('/login')
+                // this.$router.push('/login')
+                window.location.href = "/cash/ticket/index.html/login"
               }else{
                 this.$toast(res.message)
               }
