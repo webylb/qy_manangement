@@ -1,0 +1,222 @@
+<template>
+    <div class="my">
+        <section>
+          <div class="my-header">
+            <img src="../assets/images/cover.png" alt="">
+            <p class="name">{{ name }}</p>
+          </div>
+          <div class="my-list">
+            <van-cell-group>
+              <van-cell is-link to="userInfo" >
+                <template slot="title">
+                  <img class="icon" src="../assets/images/my-user.png" alt="">
+                  <span class="custom-title">个人资料</span>
+                </template>
+              </van-cell>
+              <van-cell is-link to="auditRecord" >
+                <template slot="title">
+                  <img class="icon" src="../assets/images/my-shenhe.png" alt="">
+                  <span class="custom-title">审核记录</span>
+                </template>
+              </van-cell>
+              <van-cell is-link to="heixiaoRecord" >
+                <template slot="title">
+                  <img class="icon" src="../assets/images/my-hexiao.png" alt="">
+                  <span class="custom-title">核销记录</span>
+                </template>
+              </van-cell>
+            </van-cell-group>
+          </div>
+          <div class="my-list">
+            <van-cell-group>
+              <van-cell is-link to="changePassword" >
+                <template slot="title">
+                  <img class="icon" src="../assets/images/my-pdw.png" alt="">
+                  <span class="custom-title">修改密码</span>
+                </template>
+              </van-cell>
+              <van-cell is-link @click="showPopup">
+                <template slot="title">
+                  <img class="icon" src="../assets/images/my-out.png" alt="">
+                  <span class="custom-title">退出登录</span>
+                </template>
+              </van-cell>
+            </van-cell-group>
+          </div>
+        </section>
+        <van-dialog
+          v-model="showInfo"
+          title="提示"
+          show-cancel-button
+          confirm-button-color="#1890FF"
+          confirmButtonText="确认"
+          @confirm="toLoginOut"
+        >
+          <p class="dialog-subtitle">确认退出登录?</p>
+        </van-dialog>
+    </div>
+</template>
+
+<script>
+
+    import { Cell, CellGroup, Dialog } from 'vant'
+    import { mapState, mapMutations } from 'vuex'
+    import * as core from '../api/my'
+    import { trackEvent } from '../common/js/util'
+
+    export default {
+        name: 'my',
+        data() {
+          return {
+            loading: false,
+            finished: false,
+            name: '门店名称',
+            showInfo: false
+          }
+        },
+        computed: {
+          userInfo: {
+            get(){
+              return this.$store.state.userInfo
+            },
+            set(val){
+              this.$store.state.userInfo = val
+            }
+          }
+        },
+        created() {
+
+        },
+        activated() {
+          document.title = this.$route.meta.title;
+          if(!(this.userInfo && this.userInfo.name)){
+            this.getUserData()
+          }else{
+            this.name = this.userInfo.name
+          }
+        },
+        methods: {
+          ...mapMutations(['SAVE_USER_INFO']),
+          getUserData(){
+            core.getUserData().then(res => {
+              //console.log(res)
+              if (res.code && res.code == '00') {
+                this.name = res.result.name
+                this.SAVE_USER_INFO(res.result || '--')
+              }else{
+                this.$toast(res.message)
+              }
+            }).catch(err => {
+              this.$toast("网络错误")
+            })
+          },
+          showPopup(){
+            this.showInfo = true;
+          },
+          toLoginOut(){
+            this.subLoginOut()
+          },
+          subLoginOut(){
+            core.subLoginOut().then(res => {
+              // console.log(res)
+              if (res.code && res.code == '00') {
+                this.$toast(res.message)
+                // this.$router.push('/login')
+                window.location.href = "/cash/ticket/index.html/login"
+              }else{
+                this.$toast(res.message)
+              }
+            }).catch(err => {
+              this.$toast("网络错误")
+            })
+          }
+        },
+        components: {
+          [Cell.name]: Cell,
+          [CellGroup.name]: CellGroup,
+          [Dialog.name]: Dialog
+        }
+    }
+</script>
+
+<style lang="less" scoped>
+    /*@import "../common/style/mixins";*/
+    .my {
+      background-color: #F5F5F5!important;
+      width: 100%;
+      height: calc(100vh - 1.33333rem);
+      .my-header {
+        width: 100%;
+        height: 123px;
+        background: url('../assets/images/top-bg.png') no-repeat center;
+        background-size: 100% 100%;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        padding: 0 12px;
+        box-sizing: border-box;
+        img {
+          width: 60px;
+          height: 60px;
+        }
+        .name {
+          font-size:18px;
+          color:rgba(255,255,255,1);
+          margin-left: 12px;
+        }
+      }
+      .my-list {
+        margin-bottom: 8px;
+        font-size:16px;
+        color:rgba(51,51,51,1);
+        .icon {
+          width: 22px;
+          height: 22px;
+          margin-right: 12px;
+          vertical-align: middle;
+        }
+        span {
+          display: inline-block;
+          height: 22px;
+          line-height: 24px;
+        }
+      }
+
+    }
+    .my /deep/ .van-cell {
+      padding: 19px 12px;
+    }
+    .my /deep/ .van-cell:not(:last-child)::after {
+      left: 12px;
+    }
+    .my /deep/ .van-cell__title {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+    }
+    .my /deep/ .van-hairline--top-bottom::after, .van-hairline-unset--top-bottom::after {
+        border-color: #F5F5F5;
+        border-width: 0;
+    }
+    .my /deep/ .van-dialog__content{
+      text-align: center;
+    }
+    .my /deep/ .van-dialog__header {
+      padding-left: 20px;
+      padding-right: 20px;
+      box-sizing: border-box;
+      word-break: break-all;
+      font-size: 18px;
+    }
+    .dialog-subtitle {
+      margin: 0;
+      padding: 20px ;
+      box-sizing: border-box;
+      color: #666666;
+      text-align: left;
+      line-height:23px;
+      word-break: break-all;
+      text-align: center;
+      padding-bottom: 40px;
+    }
+</style>
