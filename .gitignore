@@ -4,6 +4,7 @@ node_modules
 /prev
 /line
 src/api/*
+publish.sh*
 
 # local env files
 .env.local
