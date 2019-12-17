@@ -64,7 +64,6 @@
       },
       created() {
         document.title = this.$route.meta.title
-        this.innerHeight = window.innerHeight && window.innerHeight
       },
       mounted() {
 
@@ -124,9 +123,6 @@
           data.password = this.$md5(this.password)
           core.subLogin(data).then(res => {
             if (res.code && res.code == '00') {
-              if(this.innerHeight - window.innerHeight >= 200){
-                window.reload()
-              }
               this.$toast(res.message)
               window.location.href = "/cash/ticket/index.html/"
             }else{

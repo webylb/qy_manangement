@@ -2,7 +2,7 @@
     <div class="bottom-bar">
         <router-view class="router-wrap"/>
         <van-tabbar safe-area-inset-bottom inactive-color="#A8B8C7" active-color="#1890FF" v-model="active" class="van-hairline--top">
-            <van-tabbar-item @click="jumpLink('home')" name="home">
+            <van-tabbar-item @click="jumpLink('home')">
                 <span>券码生成</span>
                 <img
                   slot="icon"
@@ -10,7 +10,7 @@
                   :src="props.active ? icon[0].active : icon[0].normal"
                 >
             </van-tabbar-item>
-            <van-tabbar-item @click="jumpLink('hexiao')" name="hexiao">
+            <van-tabbar-item @click="jumpLink('hexiao')">
                 <span>核销</span>
                 <img
                   slot="icon"
@@ -18,7 +18,7 @@
                   :src="props.active ? icon[1].active : icon[1].normal"
                 >
             </van-tabbar-item>
-            <van-tabbar-item @click="jumpLink('my')" name="my">
+            <van-tabbar-item @click="jumpLink('my')">
                 <span>我的</span>
                 <img
                   slot="icon"
@@ -36,7 +36,7 @@
         name: "BottomBar",
         data() {
           return {
-            active: 'home',
+            active: 0,
             icon: [
               {
                 normal: require('../assets/images/bar/create1.svg'),
@@ -58,13 +58,6 @@
           [Tabbar.name]: Tabbar
         },
         mounted() {
-          if(this.$route.path === '/my'){
-            this.active = 'my'
-          }else if(this.$route.path === '/hexiao'){
-            this.active = 'hexiao'
-          }else{
-            this.active = 'home'
-          }
           this.setHeaderTitle()
         },
         methods: {
@@ -75,10 +68,13 @@
           jumpLink(type){
             if(type === 'home'){
               window.location.href = '/cash/ticket/index.html/'
+              this.active = 0
             }else if(type === 'hexiao'){
               window.location.href = '/cash/ticket/index.html/hexiao'
+              this.active = 1
             }else if(type === 'my'){
               window.location.href = '/cash/ticket/index.html/my'
+              this.active = 2
             }
           }
         },

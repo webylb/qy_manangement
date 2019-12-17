@@ -58,13 +58,6 @@
           [Tabbar.name]: Tabbar
         },
         mounted() {
-          if(this.$route.path === '/my'){
-            this.active = 'my'
-          }else if(this.$route.path === '/hexiao'){
-            this.active = 'hexiao'
-          }else{
-            this.active = 'home'
-          }
           this.setHeaderTitle()
         },
         methods: {
@@ -74,11 +67,14 @@
           },
           jumpLink(type){
             if(type === 'home'){
-              window.location.href = '/cash/ticket/index.html/'
+              this.$route.push('/home')
+              // window.location.href = '/cash/ticket/index.html/'
             }else if(type === 'hexiao'){
-              window.location.href = '/cash/ticket/index.html/hexiao'
+              this.$route.push('/hexiao')
+              // window.location.href = '/cash/ticket/index.html/hexiao'
             }else if(type === 'my'){
-              window.location.href = '/cash/ticket/index.html/my'
+              this.$route.push('/my')
+              // window.location.href = '/cash/ticket/index.html/my'
             }
           }
         },

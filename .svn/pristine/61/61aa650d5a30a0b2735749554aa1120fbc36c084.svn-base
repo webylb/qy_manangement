@@ -58,13 +58,6 @@
           [Tabbar.name]: Tabbar
         },
         mounted() {
-          if(this.$route.path === '/my'){
-            this.active = 'my'
-          }else if(this.$route.path === '/hexiao'){
-            this.active = 'hexiao'
-          }else{
-            this.active = 'home'
-          }
           this.setHeaderTitle()
         },
         methods: {
